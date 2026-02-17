@@ -1,6 +1,6 @@
 # 📊 Quality Reference & Compliance Tracking
 
-**Purpose**: This document maps the KidsChores codebase to the Home Assistant Platinum Quality Scale. It serves as our 'Compliance Constitution.'
+**Purpose**: This document maps the ChoreOps codebase to the Home Assistant Platinum Quality Scale. It serves as our 'Compliance Constitution.'
 
 **Maintenance**: Update this file only when new quality tiers are reached or when mapping internal logic to HA requirements changes.
 
@@ -21,26 +21,26 @@
 
 ## 🎯 Platinum Requirement Map
 
-**How KidsChores Architecture Satisfies Home Assistant Platinum Standards**
+**How ChoreOps architecture satisfies Home Assistant Platinum Standards**
 
-| HA Platinum Requirement    | KidsChores Implementation Statement                                                                                                    | Evidence Location                             | Standards Reference                                                            |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------ |
-| **Strict Typing**          | 100% MyPy coverage enforced in CI/CD via `quick_lint.sh`. Zero type errors across all modules.                                         | `pyproject.toml` (mypy config), CI workflow   | [DEV_STDS § 4](DEVELOPMENT_STANDARDS.md#4-type-hints-mandatory)                |
-| **Decoupling**             | Logic (Engines) physically isolated from Framework (Managers) via `utils/` and `engines/` split. No `homeassistant.*` imports allowed. | `utils/`, `engines/` directories              | [DEV_STDS § 5](DEVELOPMENT_STANDARDS.md#5-utils-vs-helpers-boundary)           |
-| **Zero Hardcoded Strings** | All user-facing text routed through `const.py` → `translations/en.json`. Enforced via Phase 0 Audit Step C.                            | `const.py`, `translations/` | [DEV_STDS § 1](DEVELOPMENT_STANDARDS.md#1-no-hardcoded-strings)                |
-| **Scalability**            | Storage-Only architecture removes Config Entry size limits. Reload 8x faster (2.5s → 0.3s).                                            | `.storage/kidschores_data`                    | [ARCHITECTURE § Data](ARCHITECTURE.md#storage-only-mode-advantages)            |
-| **Async Dependencies**     | All I/O operations use async patterns. No blocking calls. Data coordinator pattern for efficient updates.                              | `coordinator.py`, all entity platforms        | [AGENTS.md § Async](../../core/AGENTS.md)                                      |
-| **Config Flow**            | UI-based setup required. Reauthentication and reconfiguration supported.                                                               | `config_flow.py`, `options_flow.py`           | [DEV_STDS § Config Flow](DEVELOPMENT_STANDARDS.md#config-flow)                 |
-| **Entity Unique IDs**      | Every entity has persistent UUID-based unique ID.                                                                                      | All entity platforms (`sensor.py`, etc.)      | [AGENTS.md § Unique IDs](../../core/AGENTS.md)                                 |
-| **Service Actions**        | Registered in `async_setup()`. Validation checks entry state. Exception translations used.                                             | `services.py`                                 | [DEV_STDS § Services](DEVELOPMENT_STANDARDS.md#service-actions)                |
-| **Entity Translations**    | Full i18n support via `translations/en.json` with Crowdin automation.                                                                  | `translations/` (14 languages)                | [DEV_STDS § 2](DEVELOPMENT_STANDARDS.md#2-localization--translation-standards) |
-| **Test Coverage**          | 95%+ coverage enforced. 1000+ passing tests across workflow scenarios.                                                                 | `tests/` directory                            | [Test Reports](../tests/)                                                      |
-| **Documentation**          | Comprehensive docs covering architecture, standards, review process.                                                                   | `docs/` directory                             | This file                                                                      |
-| **Terminology Clarity**    | Strict lexicon: "Items" (storage) vs "Entities" (HA platform). Enforced via Phase 0 Audit Step B.                                      | All code and docs                             | [ARCHITECTURE § Lexicon](ARCHITECTURE.md#-lexicon-standards-critical)          |
+| HA Platinum Requirement    | ChoreOps implementation statement                                                                                                      | Evidence Location                           | Standards Reference                                                            |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Strict Typing**          | 100% MyPy coverage enforced in CI/CD via `quick_lint.sh`. Zero type errors across all modules.                                         | `pyproject.toml` (mypy config), CI workflow | [DEV_STDS § 4](DEVELOPMENT_STANDARDS.md#4-type-hints-mandatory)                |
+| **Decoupling**             | Logic (Engines) physically isolated from Framework (Managers) via `utils/` and `engines/` split. No `homeassistant.*` imports allowed. | `utils/`, `engines/` directories            | [DEV_STDS § 5](DEVELOPMENT_STANDARDS.md#5-utils-vs-helpers-boundary)           |
+| **Zero Hardcoded Strings** | All user-facing text routed through `const.py` → `translations/en.json`. Enforced via Phase 0 Audit Step C.                            | `const.py`, `translations/`                 | [DEV_STDS § 1](DEVELOPMENT_STANDARDS.md#1-no-hardcoded-strings)                |
+| **Scalability**            | Storage-Only architecture removes Config Entry size limits. Reload 8x faster (2.5s → 0.3s).                                            | `.storage/choreops/choreops_data`           | [ARCHITECTURE § Data](ARCHITECTURE.md#storage-only-mode-advantages)            |
+| **Async Dependencies**     | All I/O operations use async patterns. No blocking calls. Data coordinator pattern for efficient updates.                              | `coordinator.py`, all entity platforms      | [AGENTS.md § Async](../../core/AGENTS.md)                                      |
+| **Config Flow**            | UI-based setup required. Reauthentication and reconfiguration supported.                                                               | `config_flow.py`, `options_flow.py`         | [DEV_STDS § Config Flow](DEVELOPMENT_STANDARDS.md#config-flow)                 |
+| **Entity Unique IDs**      | Every entity has persistent UUID-based unique ID.                                                                                      | All entity platforms (`sensor.py`, etc.)    | [AGENTS.md § Unique IDs](../../core/AGENTS.md)                                 |
+| **Service Actions**        | Registered in `async_setup()`. Validation checks entry state. Exception translations used.                                             | `services.py`                               | [DEV_STDS § Services](DEVELOPMENT_STANDARDS.md#service-actions)                |
+| **Entity Translations**    | Full i18n support via `translations/en.json` with Crowdin automation.                                                                  | `translations/` (14 languages)              | [DEV_STDS § 2](DEVELOPMENT_STANDARDS.md#2-localization--translation-standards) |
+| **Test Coverage**          | 95%+ coverage enforced. 1000+ passing tests across workflow scenarios.                                                                 | `tests/` directory                          | [Test Reports](../tests/)                                                      |
+| **Documentation**          | Comprehensive docs covering architecture, standards, review process.                                                                   | `docs/` directory                           | This file                                                                      |
+| **Terminology Clarity**    | Strict lexicon: "Items" (storage) vs "Entities" (HA platform). Enforced via Phase 0 Audit Step B.                                      | All code and docs                           | [ARCHITECTURE § Lexicon](ARCHITECTURE.md#-lexicon-standards-critical)          |
 
 **Platinum Certification Date**: January 2026
 
-**Quality Scale File**: [quality_scale.yaml](../custom_components/kidschores/quality_scale.yaml) - All 64 rules marked "done" or "exempt" with justification for each.
+**Quality Scale File**: [quality_scale.yaml](../custom_components/choreops/quality_scale.yaml) - All 64 rules marked "done" or "exempt" with justification for each.
 
 ---
 
@@ -48,13 +48,13 @@
 
 **Why Layered Architecture IS Quality Assurance**
 
-KidsChores achieves Platinum quality not through manual review, but through architectural constraints that make defects unlikely.
+ChoreOps achieves Platinum quality not through manual review, but through architectural constraints that make defects unlikely.
 
 ### Reliability Through Persistence
 
 **Challenge**: Gamification state (badge progress, streaks) must survive HA restarts.
 
-**Solution**: Persisted Evaluation Queues store all badge conditions in `.storage/kidschores_data`. On coordinator init, badges are re-evaluated from storage, not recalculated from scratch.
+**Solution**: Persisted Evaluation Queues store all badge conditions in `.storage/choreops/choreops_data`. On coordinator init, badges are re-evaluated from storage, not recalculated from scratch.
 
 **Quality Impact**: Zero "lost progress" bugs. State is always recoverable.
 
@@ -137,7 +137,7 @@ async def _on_badge_earned(self, event: BadgeEarnedEvent) -> None:
 
 **Requirement**: Documents and code MUST distinguish between:
 
-- **Items** / **Records**: Data in `.storage/kidschores_data` (JSON with UUIDs)
+- **Items** / **Records**: Data in `.storage/choreops/choreops_data` (JSON with UUIDs)
 - **Entities**: Home Assistant platform objects (Sensors, Buttons, Selects)
 
 **Rationale**: Ambiguous use of "Entity" causes:
@@ -165,7 +165,7 @@ def update_chore_item(self, chore_id: str) -> None:
 **Enforcement**:
 
 - Phase 0 Audit Step B: Lexicon Check
-- Automated: `grep -rn "Chore Entity" custom_components/kidschores/`
+- Automated: `grep -rn "Chore Entity" custom_components/choreops/`
 - Manual: Code reviewer rejects PRs with ambiguous terminology
 
 **Consequence of Violation**: PR blocked until terminology corrected. Platinum status requires this discipline.
@@ -227,7 +227,7 @@ _LOGGER.debug(f"Processing {kid_name}")  # ❌ f-string evaluated even if log sk
 
 **HA Guidance**: [AGENTS.md § Code Quality Standards](../../core/AGENTS.md)
 
-**KidsChores Implementation**:
+**ChoreOps implementation**:
 
 - ✅ All user-facing strings stored in `const.py`
 - ✅ Constants follow strict naming patterns:
@@ -267,7 +267,7 @@ raise HomeAssistantError(f"Kid {kid_name} not found")  # ❌ Hardcoded, not tran
 
 **HA Guidance**: [AGENTS.md § Error Handling](../../core/AGENTS.md)
 
-**KidsChores Implementation**:
+**ChoreOps implementation**:
 
 - ✅ Use most specific exception type available:
   - `ServiceValidationError` for user input errors
@@ -305,7 +305,7 @@ except Exception:  # ❌ Too broad
 
 **HA Guidance**: [AGENTS.md § Documentation Standards](../../core/AGENTS.md)
 
-**KidsChores Implementation**:
+**ChoreOps implementation**:
 
 - ✅ All public methods have docstrings
 - ✅ Module docstrings describe purpose and entity types
@@ -315,7 +315,7 @@ except Exception:  # ❌ Too broad
 **Example**:
 
 ```python
-"""Platform for KidsChores sensor entities.
+"""Platform for ChoreOps sensor entities.
 
 Provides 26 sensor types across 3 scopes:
 - Kid Scope: Per-kid sensors (points, chores completed, badges)
@@ -344,7 +344,7 @@ class KidPointsSensor(CoordinatorEntity, SensorEntity):
 
 **HA Guidance**: [AGENTS.md § Testing Requirements](../../core/AGENTS.md)
 
-**KidsChores Status**:
+**ChoreOps status**:
 
 - ✅ All tests/\*.py passing without warnings (100% baseline)
 - ✅ Small group of intentionally skipped acceptable (not counted)
@@ -371,7 +371,7 @@ python -m pytest tests/ -v     # Must pass 560/560
 
 **HA Guidance**: [AGENTS.md § Code Quality Standards](../../core/AGENTS.md)
 
-**KidsChores Status**:
+**ChoreOps status**:
 
 - ✅ Current score: 9.64/10
 - ✅ Zero critical errors (Severity 4+)
@@ -400,7 +400,7 @@ All 50 files meet quality standards
 ### Configuration Flow
 
 **HA Source**: [AGENTS.md § Configuration Flow](../../core/AGENTS.md)
-**KidsChores**: [config_flow.py](../custom_components/kidschores/config_flow.py)
+**ChoreOps**: [config_flow.py](../custom_components/choreops/config_flow.py)
 **Standards in ARCHITECTURE.md**: [Quality Standards § 1 - Configuration Flow](ARCHITECTURE.md#1-configuration-flow-)
 
 **Key Points**:
@@ -416,7 +416,7 @@ All 50 files meet quality standards
 ### Entity Development
 
 **HA Source**: [AGENTS.md § Entity Development](../../core/AGENTS.md)
-**KidsChores**: [sensor.py](../custom_components/kidschores/sensor.py), [button.py](../custom_components/kidschores/button.py)
+**ChoreOps**: [sensor.py](../custom_components/choreops/sensor.py), [button.py](../custom_components/choreops/button.py)
 **Standards in ARCHITECTURE.md**: [Entity Class Naming Standards](ARCHITECTURE.md#entity-class-naming-standards)
 
 **Key Points**:
@@ -432,7 +432,7 @@ All 50 files meet quality standards
 ### Services & Actions
 
 **HA Source**: [AGENTS.md § Service Actions](../../core/AGENTS.md)
-**KidsChores**: [services.py](../custom_components/kidschores/services.py)
+**ChoreOps**: [services.py](../custom_components/choreops/services.py)
 **Standards in ARCHITECTURE.md**: [Quality Standards § 3 - Service Actions](ARCHITECTURE.md#3-service-actions-with-validation-)
 
 **Key Points**:
@@ -448,7 +448,7 @@ All 50 files meet quality standards
 ### Coordinator Pattern
 
 **HA Source**: [AGENTS.md § Data Update Coordinator](../../core/AGENTS.md)
-**KidsChores**: [coordinator.py](../custom_components/kidschores/coordinator.py)
+**ChoreOps**: [coordinator.py](../custom_components/choreops/coordinator.py)
 **Standards in ARCHITECTURE.md**: [Data Separation & Storage Architecture](ARCHITECTURE.md#data-separation)
 
 **Key Pattern**:
@@ -473,18 +473,18 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
 
 - [AGENTS.md](../../core/AGENTS.md) - Authoritative source for all quality standards
 
-**KidsChores Documentation**:
+**ChoreOps documentation**:
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Complete architecture + quality standards (NEW)
 - [CODE_REVIEW_GUIDE.md](CODE_REVIEW_GUIDE.md) - Phase 0 audit framework + review checklists
-- [quality_scale.yaml](../custom_components/kidschores/quality_scale.yaml) - Rule implementation status
+- [quality_scale.yaml](../custom_components/choreops/quality_scale.yaml) - Rule implementation status
 
 **Implementation Files**:
 
-- [const.py](../custom_components/kidschores/const.py) - All constants and translation keys
-- [config_flow.py](../custom_components/kidschores/config_flow.py) - Configuration flow
-- [services.py](../custom_components/kidschores/services.py) - Service definitions
-- [coordinator.py](../custom_components/kidschores/coordinator.py) - Core business logic
+- [const.py](../custom_components/choreops/const.py) - All constants and translation keys
+- [config_flow.py](../custom_components/choreops/config_flow.py) - Configuration flow
+- [services.py](../custom_components/choreops/services.py) - Service definitions
+- [coordinator.py](../custom_components/choreops/coordinator.py) - Core business logic
 
 **Test References**:
 
@@ -538,7 +538,7 @@ Before submitting code, verify all items:
 
 ### Language Support Maintenance Checklist ⭐ NEW
 
-**When adding a new language to KidsChores**:
+**When adding a new language to ChoreOps**:
 
 - [ ] **Add dashboard translations**: Create `translations_custom/{lang_code}_dashboard.json` with all UI strings
 - [ ] **Add notification translations**: Create `translations_custom/{lang_code}_notifications.json` with all notification text
@@ -565,7 +565,7 @@ python -m json.tool translations_custom/es_dashboard.json > /dev/null && echo "V
 # Should show new language in available languages list
 
 # Ensure no hardcoded language lists anywhere
-grep -r "LANGUAGES = \[" custom_components/kidschores/ | grep -v "homeassistant.generated"
+grep -r "LANGUAGES = \[" custom_components/choreops/ | grep -v "homeassistant.generated"
 # Should return 0 results (no hardcoded lists)
 ```
 
@@ -590,7 +590,7 @@ grep -r "LANGUAGES = \[" custom_components/kidschores/ | grep -v "homeassistant.
 - [ ] **Purity Check**: No `homeassistant.*` imports in `utils/`, `engines/`, `data_builders.py`
 - [ ] **Lexicon Check**: No "Chore Entity" or "Kid Entity" in docstrings/comments (use "Item"/"Record")
 - [ ] **CRUD Ownership**: No `_data[` or `_persist()` in `options_flow.py` or `services.py`
-- [ ] **Type Checking**: `mypy custom_components/kidschores/` returns zero errors
+- [ ] **Type Checking**: `mypy custom_components/choreops/` returns zero errors
 - [ ] **Test Coverage**: New code has 95%+ test coverage
 
 ### Code Quality Standards
@@ -677,7 +677,7 @@ All Gold requirements satisfied.
 - ✅ All 64 quality scale rules (done or legitimately exempt)
 - ✅ Terminology Clarity (Item vs Entity lexicon enforced)
 
-See [quality_scale.yaml](../custom_components/kidschores/quality_scale.yaml) for complete rule status.
+See [quality_scale.yaml](../custom_components/choreops/quality_scale.yaml) for complete rule status.
 
 ---
 
@@ -691,4 +691,4 @@ This guide is maintained alongside the ARCHITECTURE.md document. When updating:
 4. **Mark completion date** when new standards are implemented
 
 **Last Updated**: January 27, 2026
-**Maintained By**: KidsChores Development Team
+**Maintained By**: ChoreOps Development Team

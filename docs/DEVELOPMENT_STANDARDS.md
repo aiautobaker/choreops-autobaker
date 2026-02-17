@@ -1,8 +1,8 @@
 # 📘 Development Standards & Coding Guidelines
 
-**Purpose**: Prescriptive standards for how we code, organize, and maintain the KidsChores codebase.
+**Purpose**: Prescriptive standards for how we code, organize, and maintain the ChoreOps codebase.
 
-**Audience**: All developers writing code for KidsChores.
+**Audience**: All developers writing code for ChoreOps.
 
 **Contents**: Git workflows, naming conventions, coding patterns, entity standards, error handling.
 
@@ -14,7 +14,7 @@
 
 ---
 
-## 🏛️ KidsChores Repository Standards
+## 🏛️ ChoreOps repository standards
 
 ### 1. Git & Workflow Standards
 
@@ -92,7 +92,7 @@ With over 1,000 constants, we follow strict naming patterns to ensure the code r
 
 **`DATA_*`** = **Internal Storage Keys**
 
-- **Usage**: Accessing/modifying `.storage/kidschores_data`
+- **Usage**: Accessing/modifying `.storage/choreops/choreops_data`
 - **Context**: `coordinator._data[const.DATA_KIDS][kid_id][const.DATA_KID_NAME]`
 - **Rule**: Always singular entity names (`DATA_KID_*`, `DATA_PARENT_*`)
 
@@ -418,7 +418,7 @@ next_time = datetime.now() + timedelta(days=1)
 **Correct Pattern** ✅:
 
 ```python
-from custom_components.kidschores.utils.dt_utils import dt_today_local, dt_add_interval
+from custom_components.choreops.utils.dt_utils import dt_today_local, dt_add_interval
 today = dt_today_local()
 next_time = dt_add_interval(dt_now_local(), {"interval": 1, "interval_unit": "day"})
 ```
@@ -455,8 +455,8 @@ bucket_key = utc_dt.date().isoformat()  # UTC date (WRONG!)
 For chore/badge recurrence calculations, use `RecurrenceEngine` class instead of manual date arithmetic:
 
 ```python
-from custom_components.kidschores.engines.schedule import RecurrenceEngine
-from custom_components.kidschores.type_defs import ScheduleConfig
+from custom_components.choreops.engines.schedule import RecurrenceEngine
+from custom_components.choreops.type_defs import ScheduleConfig
 
 config: ScheduleConfig = {
     "frequency": "WEEKLY",
@@ -503,9 +503,9 @@ These standards ensure we maintain Platinum quality compliance. See [QUALITY_REF
 
 #### 5.1 Type System
 
-**File**: [type_defs.py](../custom_components/kidschores/type_defs.py)
+**File**: [type_defs.py](../custom_components/choreops/type_defs.py)
 
-KidsChores uses a **hybrid typing strategy** that matches types to actual code patterns:
+ChoreOps uses a **hybrid typing strategy** that matches types to actual code patterns:
 
 **Use TypedDict When**:
 
@@ -776,16 +776,16 @@ All signals use the **past-tense naming** pattern to indicate completed actions:
 Every signal is scoped to a specific config entry using `get_event_signal()`:
 
 ```python
-from custom_components.kidschores import const
-from custom_components.kidschores.helpers import entity_helpers
+from custom_components.choreops import const
+from custom_components.choreops.helpers import entity_helpers
 
 # Build instance-scoped signal
 signal = entity_helpers.get_event_signal(entry_id, const.SIGNAL_SUFFIX_POINTS_CHANGED)
-# Result: "kidschores_{entry_id}_points_changed"
+# Result: "choreops_{entry_id}_points_changed"
 
 # Two instances never interfere:
-# Instance A: "kidschores_abc123_points_changed"
-# Instance B: "kidschores_xyz789_points_changed"
+# Instance A: "choreops_abc123_points_changed"
+# Instance B: "choreops_xyz789_points_changed"
 ```
 
 ##### BaseManager Pattern
@@ -793,8 +793,8 @@ signal = entity_helpers.get_event_signal(entry_id, const.SIGNAL_SUFFIX_POINTS_CH
 All Managers extend `BaseManager` which provides standardized emit/listen methods:
 
 ```python
-from custom_components.kidschores.managers import BaseManager
-from custom_components.kidschores import const
+from custom_components.choreops.managers import BaseManager
+from custom_components.choreops import const
 
 class NotificationManager(BaseManager):
     """Handles all notification dispatch."""
@@ -840,7 +840,7 @@ async def _on_badge_earned(self, payload: BadgeEarnedEvent) -> None:
     await self._apply_award(payload)
 ```
 
-**Validation for listener migrations**: `./utils/quick_lint.sh --fix`, `mypy custom_components/kidschores/`, targeted workflow tests, and runtime log audit for thread-misuse warnings.
+**Validation for listener migrations**: `./utils/quick_lint.sh --fix`, `mypy custom_components/choreops/`, targeted workflow tests, and runtime log audit for thread-misuse warnings.
 
 ##### Event Payload TypedDicts
 
@@ -1095,7 +1095,7 @@ When adding new feature flags that control entity creation:
 
 #### Entity Cleanup Architecture
 
-KidsChores uses a **dual-path reload system** where both paths must run synchronized cleanup to prevent orphaned entities.
+ChoreOps uses a **dual-path reload system** where both paths must run synchronized cleanup to prevent orphaned entities.
 
 **The Two Reload Paths:**
 
@@ -1195,7 +1195,7 @@ Before committing code changes, validate they meet quality standards using these
 MyPy type checking is now **mandatory** and runs automatically in `quick_lint.sh`.
 
 ```bash
-mypy custom_components/kidschores/  # Verify all type hints are correct
+mypy custom_components/choreops/  # Verify all type hints are correct
 ```
 
 **Current Strictness**: Platinum-level compliance (as of January 2026)
