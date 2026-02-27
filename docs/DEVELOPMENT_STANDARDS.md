@@ -27,10 +27,10 @@ To maintain a clean history and stable environment use a **Traffic Controller** 
 
 ### 1.0 Release tag versioning standard (all repos)
 
-Use SemVer-style Git tags with a required `v` prefix for all ChoreOps repositories.
+Use SemVer-style release versions without a `v` prefix for all ChoreOps repositories.
 
-- **Stable tags**: `vX.Y.Z` (example: `v1.5.0`)
-- **Prerelease tags**: `vX.Y.Z-beta.N`, `vX.Y.Z-rc.N` (examples: `v1.5.0-beta.1`, `v1.5.0-rc.1`)
+- **Stable versions**: `X.Y.Z` (example: `1.5.0`)
+- **Prerelease versions**: `X.Y.Z-beta.N`, `X.Y.Z-rc.N` (examples: `1.5.0-beta.1`, `1.5.0-rc.1`)
 - **Tag immutability**: Published tags are immutable; never retag an existing version.
 - **Consistency rule**: The same format applies to both the integration repo and the dashboard registry repo.
 
@@ -74,6 +74,10 @@ To keep editor diagnostics stable across contributors, this repository uses a lo
 - **Vendored runtime mirror**: Runtime assets in `custom_components/choreops/dashboards/` are sync outputs, not hand-edited sources.
 - **No hardcoded registry filename strings**: Use constants/path derivation in runtime code.
 - **Required update flow**: canonical edit → `python utils/sync_dashboard_assets.py` → `python utils/sync_dashboard_assets.py --check` → integration validation.
+- **Release apply contract**: Dashboard generator Options Flow Step 1 must prepare selected release assets and apply them to local vendored runtime paths (`dashboards/templates`, `dashboards/translations`, `dashboards/preferences`, and local `dashboard_registry.json`) before Step 3 execution.
+- **Cache lifecycle contract**: After local release apply, reset and re-prime manifest caches and clear dashboard translation caches before continuing flow execution.
+- **Selection policy contract**: Explicit tags are strict-pin; latest modes resolve once and reuse the resolved ref; current-installed mode uses local registry `release_version`.
+- **Dependency review UX contract**: Step 4 keeps plain translated section headers for required/recommended dependencies and prefixes each missing dependency line with `❌`.
 
 ---
 

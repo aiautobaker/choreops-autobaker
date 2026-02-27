@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import MagicMock
 
-from packaging.version import Version
 import pytest
 
 from custom_components.choreops.helpers import dashboard_builder as builder
@@ -19,33 +18,34 @@ async def test_discover_compatible_release_tags_filters_and_sorts(
 
     async def _mock_fetch_releases(_hass: Any) -> list[dict[str, Any]]:
         return [
-            {"tag_name": "v0.5.4"},
-            {"tag_name": "v0.5.6-beta1"},
-            {"tag_name": "v0.5.5"},
-            {"tag_name": "v0.5.0_beta3"},
-            {"tag_name": "v0.5.5_beta1"},
+            {"tag_name": "v0.5.7"},
+            {"tag_name": "0.5.4"},
+            {"tag_name": "0.5.6-beta.1"},
+            {"tag_name": "0.5.6-beta.2"},
+            {"tag_name": "0.5.6-rc.1"},
+            {"tag_name": "0.5.5"},
+            {"tag_name": "0.5.0-beta.3"},
+            {"tag_name": "0.5.5-beta.1"},
+            {"tag_name": "0.5.5_beta1"},
+            {"tag_name": "0.5.6-rc1"},
             {"tag_name": "invalid_tag"},
-            {"tag_name": "v0.4.9"},
+            {"tag_name": "0.4.9"},
         ]
 
-    async def _mock_integration_version(_hass: Any) -> Version:
-        return Version("0.5.2")
-
     monkeypatch.setattr(builder, "_fetch_dashboard_releases", _mock_fetch_releases)
-    monkeypatch.setattr(
-        builder,
-        "_get_installed_integration_version",
-        _mock_integration_version,
-    )
 
     tags = await builder.discover_compatible_dashboard_release_tags(MagicMock())
 
     assert tags == [
-        "v0.5.6-beta1",
-        "v0.5.5",
-        "v0.5.5_beta1",
-        "v0.5.4",
-        "v0.5.0_beta3",
+        "v0.5.7",
+        "0.5.6-rc.1",
+        "0.5.6-beta.2",
+        "0.5.6-beta.1",
+        "0.5.5",
+        "0.5.5-beta.1",
+        "0.5.4",
+        "0.5.0-beta.3",
+        "0.4.9",
     ]
 
 
@@ -57,7 +57,7 @@ async def test_resolve_dashboard_release_selection_pinned_and_fallback(
 
     async def _mock_discover(_hass: Any, include_prereleases: bool = True) -> list[str]:
         _ = include_prereleases
-        return ["v0.5.4", "v0.5.3"]
+        return ["0.5.4", "0.5.3"]
 
     monkeypatch.setattr(
         builder,
@@ -67,17 +67,45 @@ async def test_resolve_dashboard_release_selection_pinned_and_fallback(
 
     selected = await builder.resolve_dashboard_release_selection(
         MagicMock(),
-        pinned_release_tag="v0.5.4",
+        pinned_release_tag="0.5.4",
     )
-    assert selected.selected_tag == "v0.5.4"
+    assert selected.selected_tag == "0.5.4"
     assert selected.reason == "pinned_release"
 
     fallback = await builder.resolve_dashboard_release_selection(
         MagicMock(),
-        pinned_release_tag="v9.9.9",
+        pinned_release_tag="release-9.9.9",
     )
-    assert fallback.selected_tag == "v0.5.4"
+    assert fallback.selected_tag == "0.5.4"
     assert fallback.reason == "pinned_unavailable_fallback_latest"
+
+
+@pytest.mark.asyncio
+async def test_resolve_dashboard_release_selection_keeps_explicit_prerelease_pin(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Explicit prerelease pin remains selected even with prerelease filtering off."""
+
+    async def _mock_discover(
+        _hass: Any, include_prereleases: bool = False
+    ) -> list[str]:
+        _ = include_prereleases
+        return ["0.5.4", "0.5.3"]
+
+    monkeypatch.setattr(
+        builder,
+        "discover_compatible_dashboard_release_tags",
+        _mock_discover,
+    )
+
+    selected = await builder.resolve_dashboard_release_selection(
+        MagicMock(),
+        pinned_release_tag="0.5.6-beta.1",
+        include_prereleases=False,
+    )
+
+    assert selected.selected_tag == "0.5.6-beta.1"
+    assert selected.reason == "pinned_release_explicit"
 
 
 @pytest.mark.asyncio
