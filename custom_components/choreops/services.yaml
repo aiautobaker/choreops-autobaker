@@ -341,6 +341,63 @@ apply_bonus:
       selector:
         text:
 
+manual_adjust_points:
+  name: "Manual Adjust Points"
+  description: "Adjust points manually for a user using a signed integer amount with a required reason recorded in the ledger."
+  fields:
+    config_entry_id:
+      name: "Config Entry ID (Optional)"
+      description: "Use this if you have more than one ChoreOps setup. It targets one specific setup."
+      required: false
+      example: "abc123def456"
+      selector:
+        text:
+    config_entry_title:
+      name: "Config Entry Name (Optional)"
+      description: "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID."
+      required: false
+      example: "Family Chores"
+      selector:
+        text:
+    approver_name:
+      name: "Approver Name (Optional)"
+      description: "Optional display name of the actor performing the manual adjustment."
+      example: "Dad"
+      required: false
+      selector:
+        text:
+    user_id:
+      name: "User ID (Optional)"
+      description: "Internal UUID of the target user. Provide user_id or user_name."
+      example: "018f1c2a-1234-4f8a-9b6d-123456789abc"
+      required: false
+      selector:
+        text:
+    user_name:
+      name: "User Name (Optional)"
+      description: "Display name of the target user. Provide user_id or user_name."
+      example: "Zoë"
+      required: false
+      selector:
+        text:
+    amount:
+      name: "Amount"
+      description: "Signed whole-number points amount to adjust (for example 10 or -10; 0 is not allowed)."
+      example: -10
+      required: true
+      selector:
+        number:
+          min: -1000
+          max: 1000
+          mode: box
+    reason:
+      name: "Reason"
+      description: "Required reason recorded in the transaction ledger item name."
+      example: "Helped sibling with homework"
+      required: true
+      selector:
+        text:
+
 generate_activity_report:
   name: "Generate Activity Report"
   description: >

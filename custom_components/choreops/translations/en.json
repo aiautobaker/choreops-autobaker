@@ -2372,6 +2372,47 @@
         }
       }
     },
+    "manual_adjust_points": {
+      "name": "Manual Adjust Points",
+      "description": "Adjust points manually for a user using a signed integer amount and a required reason recorded in the ledger.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Config Entry ID (Optional)",
+          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "example": "abc123def456"
+        },
+        "config_entry_title": {
+          "name": "Config Entry Name (Optional)",
+          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "example": "Family Chores"
+        },
+        "approver_name": {
+          "name": "Approver Name (Optional)",
+          "description": "Optional display name of the actor performing the manual adjustment.",
+          "example": "Dad"
+        },
+        "user_id": {
+          "name": "User ID (Optional)",
+          "description": "Internal UUID of the target user. Provide user_id or user_name.",
+          "example": "018f1c2a-1234-4f8a-9b6d-123456789abc"
+        },
+        "user_name": {
+          "name": "User Name (Optional)",
+          "description": "Display name of the target user. Provide user_id or user_name.",
+          "example": "Zoë"
+        },
+        "amount": {
+          "name": "Amount",
+          "description": "Signed whole-number points amount to adjust (for example 10 or -10; 0 is not allowed).",
+          "example": "-10"
+        },
+        "reason": {
+          "name": "Reason",
+          "description": "Required reason recorded in the transaction ledger item name.",
+          "example": "Helped sibling with homework"
+        }
+      }
+    },
     "create_reward": {
       "name": "Create reward",
       "description": "Create a new reward programmatically.",

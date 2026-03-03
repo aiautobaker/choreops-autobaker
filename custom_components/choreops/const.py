@@ -2632,6 +2632,7 @@ ISO_DATE_STRING_LENGTH: Final = 10
 # ------------------------------------------------------------------------------------------------
 SERVICE_APPLY_BONUS: Final = "apply_bonus"
 SERVICE_APPLY_PENALTY: Final = "apply_penalty"
+SERVICE_MANUAL_ADJUST_POINTS: Final = "manual_adjust_points"
 SERVICE_APPROVE_CHORE: Final = "approve_chore"
 SERVICE_APPROVE_REWARD: Final = "approve_reward"
 SERVICE_CLAIM_CHORE: Final = "claim_chore"
@@ -2708,6 +2709,8 @@ SERVICE_FIELD_CONFIG_ENTRY_TITLE: Final = "config_entry_title"
 SERVICE_FIELD_USER_NAME: Final = "user_name"
 SERVICE_FIELD_USER_ID: Final = "user_id"
 SERVICE_FIELD_APPROVER_NAME: Final = "approver_name"
+SERVICE_FIELD_REASON: Final = "reason"
+SERVICE_FIELD_POINTS_AMOUNT: Final = "amount"
 
 # Chore service fields (workflow)
 SERVICE_FIELD_CHORE_NAME: Final = "chore_name"

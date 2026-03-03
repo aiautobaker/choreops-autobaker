@@ -6,6 +6,7 @@ Includes UI editor support with selectors for dropdowns and text inputs.
 """
 
 from datetime import datetime
+import re
 from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.config_entries import ConfigEntryState
@@ -123,6 +124,98 @@ def _with_service_target_fields(
     }
 
 
+def _validate_manual_adjust_points_payload(value: dict[str, Any]) -> dict[str, Any]:
+    """Validate manual points adjustment payload constraints.
+
+    Requires at least one assignee identifier (`user_id` or `user_name`).
+    """
+    has_user_id = bool(value.get(const.SERVICE_FIELD_USER_ID))
+    has_user_name = bool(value.get(const.SERVICE_FIELD_USER_NAME))
+
+    if not has_user_id and not has_user_name:
+        raise vol.Invalid(
+            "One of user_id or user_name must be provided for manual_adjust_points"
+        )
+
+    return value
+
+
+def _resolve_manual_adjust_assignee_id(
+    coordinator: "ChoreOpsDataCoordinator",
+    call_data: dict[str, Any],
+) -> str:
+    """Resolve assignee ID for manual points adjustment.
+
+    Prefers explicit `user_id` when provided. Falls back to `user_name` lookup.
+    """
+    provided_user_id = call_data.get(const.SERVICE_FIELD_USER_ID)
+    provided_user_name = call_data.get(const.SERVICE_FIELD_USER_NAME)
+
+    if provided_user_id:
+        assignee_id = str(provided_user_id)
+        if assignee_id not in coordinator.assignees_data:
+            raise HomeAssistantError(
+                translation_domain=const.DOMAIN,
+                translation_key=const.TRANS_KEY_ERROR_NOT_FOUND,
+                translation_placeholders={
+                    "entity_type": const.LABEL_ASSIGNEE,
+                    "name": assignee_id,
+                },
+            )
+
+        if provided_user_name:
+            try:
+                assignee_id_from_name = get_item_id_or_raise(
+                    coordinator,
+                    const.ITEM_TYPE_USER,
+                    str(provided_user_name),
+                    role=const.ROLE_ASSIGNEE,
+                )
+                if assignee_id_from_name != assignee_id:
+                    const.LOGGER.warning(
+                        "Manual Adjust Points: user_id '%s' and user_name '%s' mismatch; "
+                        "using user_id",
+                        assignee_id,
+                        provided_user_name,
+                    )
+            except HomeAssistantError:
+                const.LOGGER.warning(
+                    "Manual Adjust Points: user_name '%s' not found; using user_id '%s'",
+                    provided_user_name,
+                    assignee_id,
+                )
+
+        return assignee_id
+
+    return get_item_id_or_raise(
+        coordinator,
+        const.ITEM_TYPE_USER,
+        str(provided_user_name),
+        role=const.ROLE_ASSIGNEE,
+    )
+
+
+def _validate_non_zero_integer_amount(value: Any) -> int:
+    """Validate manual adjustment amount as a signed non-zero integer."""
+    if isinstance(value, bool):
+        raise vol.Invalid("amount must be a non-zero integer")
+
+    if isinstance(value, int):
+        amount = value
+    elif isinstance(value, str):
+        stripped = value.strip()
+        if not re.fullmatch(r"[+-]?\d+", stripped):
+            raise vol.Invalid("amount must be a non-zero integer")
+        amount = int(stripped)
+    else:
+        raise vol.Invalid("amount must be a non-zero integer")
+
+    if amount == 0:
+        raise vol.Invalid("amount cannot be 0")
+
+    return amount
+
+
 # --- Service Schemas ---
 
 # Common schema base patterns for DRY principle
@@ -194,6 +287,26 @@ APPLY_PENALTY_SCHEMA = vol.Schema(
 
 APPLY_BONUS_SCHEMA = vol.Schema(
     _with_service_target_fields(_APPROVER_ASSIGNEE_BONUS_BASE)
+)
+
+MANUAL_ADJUST_POINTS_SCHEMA = vol.All(
+    vol.Schema(
+        _with_service_target_fields(
+            {
+                vol.Optional(const.SERVICE_FIELD_APPROVER_NAME): cv.string,
+                vol.Optional(const.SERVICE_FIELD_USER_ID): cv.string,
+                vol.Optional(const.SERVICE_FIELD_USER_NAME): cv.string,
+                vol.Required(
+                    const.SERVICE_FIELD_POINTS_AMOUNT
+                ): _validate_non_zero_integer_amount,
+                vol.Required(const.SERVICE_FIELD_REASON): vol.All(
+                    cv.string,
+                    vol.Length(min=1),
+                ),
+            }
+        )
+    ),
+    _validate_manual_adjust_points_payload,
 )
 
 # Optional filter base patterns for reset operations
@@ -2211,6 +2324,79 @@ def async_setup_services(hass: HomeAssistant):
         schema=APPLY_BONUS_SCHEMA,
     )
 
+    # ======================================================================
+    # MANUAL POINTS ADJUSTMENT SERVICE HANDLERS
+    # ======================================================================
+
+    async def handle_manual_adjust_points(call: ServiceCall) -> None:
+        """Handle manual points adjustment using signed integer amount."""
+        entry_id = _resolve_target_entry_id(hass, dict(call.data))
+        if not entry_id:
+            const.LOGGER.warning(
+                "Manual Adjust Points: %s", const.TRANS_KEY_ERROR_MSG_NO_ENTRY_FOUND
+            )
+            return
+
+        coordinator = _get_coordinator_by_entry_id(hass, entry_id)
+
+        assignee_id = _resolve_manual_adjust_assignee_id(coordinator, dict(call.data))
+        assignee_name = coordinator.assignees_data[assignee_id].get(
+            const.DATA_USER_NAME, assignee_id
+        )
+
+        amount = int(call.data[const.SERVICE_FIELD_POINTS_AMOUNT])
+        reason = str(call.data[const.SERVICE_FIELD_REASON])
+        approver_name = cast(
+            "str | None",
+            call.data.get(const.SERVICE_FIELD_APPROVER_NAME),
+        )
+        actor_name = approver_name or "System"
+
+        # Check if user is authorized
+        user_id = call.context.user_id
+        if user_id and not await is_user_authorized_for_action(
+            hass,
+            user_id,
+            AUTH_ACTION_MANAGEMENT,
+        ):
+            const.LOGGER.warning("Manual Adjust Points: User not authorized")
+            raise HomeAssistantError(
+                translation_domain=const.DOMAIN,
+                translation_key=const.TRANS_KEY_ERROR_NOT_AUTHORIZED_ACTION,
+                translation_placeholders={"action": const.ERROR_ACTION_ADJUST_POINTS},
+            )
+
+        if amount > 0:
+            await coordinator.economy_manager.deposit(
+                assignee_id=assignee_id,
+                amount=float(amount),
+                source=const.POINTS_SOURCE_MANUAL,
+                item_name=reason,
+            )
+        else:
+            await coordinator.economy_manager.withdraw(
+                assignee_id=assignee_id,
+                amount=float(abs(amount)),
+                source=const.POINTS_SOURCE_MANUAL,
+                item_name=reason,
+            )
+
+        const.LOGGER.info(
+            "Manual points adjustment applied for assignee '%s' by '%s': amount=%s reason=%s",
+            assignee_name,
+            actor_name,
+            amount,
+            reason,
+        )
+        await coordinator.async_request_refresh()
+
+    hass.services.async_register(
+        const.DOMAIN,
+        const.SERVICE_MANUAL_ADJUST_POINTS,
+        handle_manual_adjust_points,
+        schema=MANUAL_ADJUST_POINTS_SCHEMA,
+    )
+
     # NOTE: reset_bonuses service REMOVED - superseded by reset_transactional_data
     # with scope="assignee" or scope="global" and item_type="bonuses"
 
@@ -2773,6 +2959,7 @@ async def async_unload_services(hass: HomeAssistant) -> None:
         const.SERVICE_DISAPPROVE_REWARD,
         const.SERVICE_APPLY_PENALTY,
         const.SERVICE_APPLY_BONUS,
+        const.SERVICE_MANUAL_ADJUST_POINTS,
         const.SERVICE_APPROVE_REWARD,
         const.SERVICE_RESET_CHORES_TO_PENDING_STATE,  # Renamed from SERVICE_RESET_ALL_CHORES
         const.SERVICE_RESET_OVERDUE_CHORES,
