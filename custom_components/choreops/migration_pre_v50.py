@@ -991,33 +991,13 @@ async def async_get_data_recovery_capabilities(
 
     store = ChoreOpsStore(hass)
     storage_path = Path(store.get_storage_path())
-    legacy_storage_path = Path(
-        hass.config.path(const.STORAGE_PATH_SEGMENT, LEGACY_STORAGE_KEY)
-    )
-    transitional_legacy_storage_path = Path(
-        hass.config.path(
-            const.STORAGE_PATH_SEGMENT,
-            LEGACY_STORAGE_KEY_TRANSITIONAL,
-        )
-    )
-
     storage_file_exists = await hass.async_add_executor_job(storage_path.exists)
-    legacy_storage_exists = await hass.async_add_executor_job(
-        legacy_storage_path.exists
-    )
-    transitional_legacy_storage_exists = await hass.async_add_executor_job(
-        transitional_legacy_storage_path.exists
-    )
 
     legacy_artifacts = await async_discover_legacy_choreops_artifacts(hass)
     has_legacy_candidates = bool(legacy_artifacts.get("has_migration_candidate"))
 
     return {
-        "has_current_active_file": bool(
-            storage_file_exists
-            or legacy_storage_exists
-            or transitional_legacy_storage_exists
-        ),
+        "has_current_active_file": bool(storage_file_exists),
         "has_legacy_candidates": has_legacy_candidates,
     }
 
@@ -1046,41 +1026,18 @@ async def async_prepare_current_active_storage(
     from .store import ChoreOpsStore
 
     try:
-        store = ChoreOpsStore(hass, destination_storage_key)
-        destination_path = Path(store.get_storage_path())
-        legacy_storage_path = Path(
-            hass.config.path(const.STORAGE_PATH_SEGMENT, LEGACY_STORAGE_KEY)
-        )
-        transitional_legacy_storage_path = Path(
-            hass.config.path(
-                const.STORAGE_PATH_SEGMENT,
-                LEGACY_STORAGE_KEY_TRANSITIONAL,
-            )
-        )
+        destination_store = ChoreOpsStore(hass, destination_storage_key)
+        destination_path = Path(destination_store.get_storage_path())
 
-        destination_exists = await hass.async_add_executor_job(destination_path.exists)
-        legacy_exists = await hass.async_add_executor_job(legacy_storage_path.exists)
-        transitional_legacy_exists = await hass.async_add_executor_job(
-            transitional_legacy_storage_path.exists
-        )
+        source_store = ChoreOpsStore(hass, const.STORAGE_KEY)
+        source_path = Path(source_store.get_storage_path())
+        source_exists = await hass.async_add_executor_job(source_path.exists)
 
-        if (
-            not destination_exists
-            and not legacy_exists
-            and not transitional_legacy_exists
-        ):
+        if not source_exists:
             return {
                 "prepared": False,
                 "error": "file_not_found",
             }
-
-        source_path = destination_path
-        if not destination_exists:
-            source_path = (
-                legacy_storage_path
-                if legacy_exists
-                else transitional_legacy_storage_path
-            )
 
         source_text = await hass.async_add_executor_job(source_path.read_text, "utf-8")
         try:
@@ -1137,12 +1094,7 @@ async def async_prepare_current_active_storage(
             "utf-8",
         )
 
-        if source_path == legacy_storage_path:
-            const.LOGGER.info(
-                "Copied legacy active data file into scoped ChoreOps storage"
-            )
-        else:
-            const.LOGGER.info("Using current active storage file")
+        const.LOGGER.info("Using current active storage file")
 
         return {
             "prepared": True,

@@ -340,6 +340,30 @@ def _scope_label_for_storage_key(storage_key: str, current_storage_key: str) -> 
     return "other"
 
 
+def _read_backup_source_metadata(path: str) -> tuple[str | None, str | None]:
+    """Read optional source metadata from backup JSON.
+
+    Returns:
+        Tuple of (source_entry_title, source_storage_key), both optional.
+    """
+    try:
+        raw = Path(path).read_text(encoding="utf-8")
+        payload = json.loads(raw)
+    except (OSError, ValueError):
+        return None, None
+
+    if not isinstance(payload, dict):
+        return None, None
+
+    source_entry_title = payload.get("source_entry_title")
+    source_storage_key = payload.get("source_storage_key")
+
+    return (
+        str(source_entry_title) if isinstance(source_entry_title, str) else None,
+        str(source_storage_key) if isinstance(source_storage_key, str) else None,
+    )
+
+
 async def discover_backups(
     hass: HomeAssistant,
     store,
@@ -407,6 +431,13 @@ async def discover_backups(
                 size_bytes = await hass.async_add_executor_job(
                     os.path.getsize, file_path
                 )
+                (
+                    source_entry_title,
+                    source_storage_key,
+                ) = await hass.async_add_executor_job(
+                    _read_backup_source_metadata,
+                    file_path,
+                )
 
                 backups_list.append(
                     {
@@ -417,6 +448,8 @@ async def discover_backups(
                         "age_hours": age_hours,
                         "size_bytes": size_bytes,
                         "storage_key": file_storage_key,
+                        "source_entry_title": source_entry_title,
+                        "source_storage_key": source_storage_key,
                         "scope": _scope_label_for_storage_key(
                             file_storage_key, resolved_storage_key
                         ),

@@ -15,6 +15,7 @@ import voluptuous as vol
 from . import const, data_builders as db, migration_pre_v50 as mp50
 from .data_builders import EntityValidationError
 from .helpers import backup_helpers as bh, flow_helpers as fh
+from .helpers.storage_helpers import get_entry_storage_key_from_entry
 from .options_flow import ChoreOpsOptionsFlowHandler
 
 
@@ -160,6 +161,10 @@ class ChoreOpsConfigFlow(config_entries.ConfigFlow, domain=const.DOMAIN):
             storage_key=self._get_flow_storage_key(),
             include_importable=True,
         )
+        entry_title_by_storage_key = {
+            get_entry_storage_key_from_entry(entry): str(entry.title)
+            for entry in self.hass.config_entries.async_entries(const.DOMAIN)
+        }
 
         # Build options list for SelectSelector (keeping original approach for fixed options)
         # Start with fixed options that get translated via translation_key
@@ -187,6 +192,13 @@ class ChoreOpsConfigFlow(config_entries.ConfigFlow, domain=const.DOMAIN):
                 scope_display = "Legacy Import"
             else:
                 scope_display = "Other Entry"
+                source_entry_title = backup.get("source_entry_title")
+                if isinstance(source_entry_title, str) and source_entry_title:
+                    scope_display = source_entry_title
+                else:
+                    backup_storage_key = str(backup.get("storage_key", ""))
+                    if backup_storage_key in entry_title_by_storage_key:
+                        scope_display = entry_title_by_storage_key[backup_storage_key]
             label = f"📄 {ts_display} • {tag_display} • {scope_display}"
 
             deduped_label = label

@@ -67,7 +67,7 @@
         "title": "Number of Users",
         "description": "How many users do you want to define initially?",
         "data": {
-          "approver_count": "Number of Users"
+          "user_count": "Number of Users"
         }
       },
       "users": {

@@ -120,7 +120,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ChoreOpsConfigEntry) -> 
                 pending_storage_key,
             )
 
-    if isinstance(pending_storage_key, str) and pending_storage_key:
+    has_pending_storage_handoff = isinstance(pending_storage_key, str) and bool(
+        pending_storage_key
+    )
+
+    if has_pending_storage_handoff:
         pending_store = ChoreOpsStore(hass, pending_storage_key)
         await pending_store.async_initialize(allow_legacy_fallback=False)
         pending_data = dict(pending_store.data)
@@ -140,9 +144,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ChoreOpsConfigEntry) -> 
         cleaned_data.pop(const.ENTRY_DATA_PENDING_STORAGE_KEY, None)
         hass.config_entries.async_update_entry(entry, data=cleaned_data)
 
-    # Allow legacy root-key fallback only for first integration instance.
-    # Additional entries must stay isolated and start empty unless explicitly restored.
-    allow_legacy_fallback = len(hass.config_entries.async_entries(const.DOMAIN)) <= 1
+    # Allow legacy root-key fallback only for first integration instance when
+    # setup is not coming from config-flow pending storage handoff.
+    # Flow-based recovery choices (fresh start, current active, restore, paste,
+    # or explicit migrate) must remain authoritative.
+    allow_legacy_fallback = (
+        len(hass.config_entries.async_entries(const.DOMAIN)) <= 1
+        and not has_pending_storage_handoff
+    )
     await store.async_initialize(allow_legacy_fallback=allow_legacy_fallback)
 
     # DEBUG: Check what was loaded from storage

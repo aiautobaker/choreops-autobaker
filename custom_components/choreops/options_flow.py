@@ -5860,6 +5860,17 @@ class ChoreOpsOptionsFlowHandler(config_entries.OptionsFlow):
             scope_display = "Legacy Import"
         else:
             scope_display = "Other Entry"
+            source_entry_title = backup.get("source_entry_title")
+            if isinstance(source_entry_title, str) and source_entry_title:
+                scope_display = source_entry_title
+            else:
+                backup_storage_key = str(backup.get("storage_key", ""))
+                entry_title_by_storage_key = {
+                    get_entry_storage_key_from_entry(entry): str(entry.title)
+                    for entry in self.hass.config_entries.async_entries(const.DOMAIN)
+                }
+                if backup_storage_key in entry_title_by_storage_key:
+                    scope_display = entry_title_by_storage_key[backup_storage_key]
         return f"{prefix} {local_ts} • {tag_display} • {scope_display}"
 
     def _get_coordinator(self):
