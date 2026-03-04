@@ -346,6 +346,17 @@ from custom_components.choreops.const import (
     CHORE_STATE_UNKNOWN,
     CHORE_STATE_WAITING,  # v0.5.0
     # =========================================================================
+    # CHORE CLAIM MODES
+    # =========================================================================
+    CHORE_CLAIM_MODE_BLOCKED_ALREADY_APPROVED,
+    CHORE_CLAIM_MODE_BLOCKED_COMPLETED_BY_OTHER,
+    CHORE_CLAIM_MODE_BLOCKED_MISSED_LOCKED,
+    CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN,
+    CHORE_CLAIM_MODE_BLOCKED_PENDING_CLAIM,
+    CHORE_CLAIM_MODE_BLOCKED_WAITING_WINDOW,
+    CHORE_CLAIM_MODE_CLAIMABLE,
+    CHORE_CLAIM_MODE_STEAL_AVAILABLE,
+    # =========================================================================
     # COMPLETION CRITERIA
     # =========================================================================
     COMPLETION_CRITERIA_INDEPENDENT,

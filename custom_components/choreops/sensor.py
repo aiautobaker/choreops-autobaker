@@ -789,6 +789,15 @@ class AssigneeChoreStatusSensor(ChoreOpsCoordinatorEntity, SensorEntity):
             return ", ".join(value) if value else None
         return value
 
+    @staticmethod
+    def _normalize_name_list(value: str | list[str] | None) -> list[str] | None:
+        """Normalize claimed/completed ownership values to a list of names."""
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return [name for name in value if isinstance(name, str) and name]
+        return [value] if value else None
+
     def _get_due_window_start_iso(self) -> str | None:
         """Get the due window start time as ISO string."""
         due_window_start = self.coordinator.chore_manager.get_due_window_start(
@@ -1002,12 +1011,14 @@ class AssigneeChoreStatusSensor(ChoreOpsCoordinatorEntity, SensorEntity):
             for label in cast("list", stored_labels)
         ]
 
-        # Phase 4: Add v0.5.0 rotation and lock status attributes
-        # Get current chore state for lock_reason calculation
+        # Phase 4: Add v0.5.0 rotation and claim interaction attributes
+        # Get current chore state for claim_mode calculation
         ctx = self.coordinator.chore_manager.get_chore_status_context(
             self._assignee_id, self._chore_id
         )
-        lock_reason = ctx.get(const.CHORE_CTX_LOCK_REASON)
+        can_claim = bool(ctx.get(const.CHORE_CTX_CAN_CLAIM, False))
+        can_approve = bool(ctx.get(const.CHORE_CTX_CAN_APPROVE, False))
+        claim_mode = ctx.get(const.CHORE_CTX_CLAIM_MODE)
 
         # turn_assignee_name: resolve rotation_current_assignee_id to assignee name (if rotation mode)
         turn_assignee_name = None
@@ -1032,18 +1043,40 @@ class AssigneeChoreStatusSensor(ChoreOpsCoordinatorEntity, SensorEntity):
             ),
             const.ATTR_ASSIGNED_USER_NAMES: assigned_assignees_names,
             const.ATTR_LABELS: friendly_labels,
-            # --- 2. State info ---
+            # --- 2. State & actionability ---
             const.ATTR_GLOBAL_STATE: global_state,
-            const.ATTR_CHORE_LOCK_REASON: lock_reason,
-            # --- 3. Configuration ---
+            const.ATTR_CAN_CLAIM: can_claim,
+            const.ATTR_CHORE_CLAIM_MODE: claim_mode,
+            const.ATTR_CAN_APPROVE: can_approve,
+            const.ATTR_CHORE_TURN_USER_NAME: turn_assignee_name,
+            # --- 3. Workflow policy (logic drivers) ---
             const.ATTR_DEFAULT_POINTS: chore_info.get(
                 const.DATA_CHORE_DEFAULT_POINTS, const.DEFAULT_ZERO
             ),
             const.ATTR_COMPLETION_CRITERIA: completion_criteria,
-            const.ATTR_CHORE_TURN_USER_NAME: turn_assignee_name,
             const.ATTR_APPROVAL_RESET_TYPE: chore_info.get(
                 const.DATA_CHORE_APPROVAL_RESET_TYPE,
                 const.DEFAULT_APPROVAL_RESET_TYPE,
+            ),
+            const.ATTR_APPROVAL_RESET_PENDING_CLAIM_ACTION: chore_info.get(
+                const.DATA_CHORE_APPROVAL_RESET_PENDING_CLAIM_ACTION,
+                const.DEFAULT_APPROVAL_RESET_PENDING_CLAIM_ACTION,
+            ),
+            const.ATTR_OVERDUE_HANDLING_TYPE: chore_info.get(
+                const.DATA_CHORE_OVERDUE_HANDLING_TYPE,
+                const.DEFAULT_OVERDUE_HANDLING_TYPE,
+            ),
+            const.ATTR_CHORE_CLAIM_LOCK_UNTIL_WINDOW: chore_info.get(
+                const.DATA_CHORE_CLAIM_LOCK_UNTIL_WINDOW,
+                const.DEFAULT_CHORE_CLAIM_LOCK_UNTIL_WINDOW,
+            ),
+            const.ATTR_CHORE_DUE_WINDOW_OFFSET: chore_info.get(
+                const.DATA_CHORE_DUE_WINDOW_OFFSET,
+                const.DEFAULT_DUE_WINDOW_OFFSET,
+            ),
+            const.ATTR_AUTO_APPROVE: chore_info.get(
+                const.DATA_CHORE_AUTO_APPROVE,
+                const.DEFAULT_CHORE_AUTO_APPROVE,
             ),
             const.ATTR_RECURRING_FREQUENCY: chore_info.get(
                 const.DATA_CHORE_RECURRING_FREQUENCY, const.SENTINEL_NONE_TEXT
@@ -1058,6 +1091,7 @@ class AssigneeChoreStatusSensor(ChoreOpsCoordinatorEntity, SensorEntity):
                 if completion_criteria == const.COMPLETION_CRITERIA_INDEPENDENT
                 else chore_info.get(const.DATA_CHORE_APPLICABLE_DAYS, [])
             ),
+            # --- 4. Runtime scheduling context ---
             # Return None (not translation key) when no due_date - dashboard templates
             # use None to trigger "no_due_date" display text
             const.ATTR_DUE_DATE: (
@@ -1073,14 +1107,34 @@ class AssigneeChoreStatusSensor(ChoreOpsCoordinatorEntity, SensorEntity):
             const.ATTR_CHORE_AVAILABLE_AT: available_at,
             const.ATTR_TIME_UNTIL_DUE: self._get_time_until_due(),
             const.ATTR_TIME_UNTIL_OVERDUE: self._get_time_until_overdue(),
-            # --- 4. Statistics (counts) ---
+            # Use coordinator helper to correctly handle INDEPENDENT (per-assignee) vs SHARED (chore-level)
+            const.ATTR_APPROVAL_PERIOD_START: self.coordinator.chore_manager.get_approval_period_start(
+                self._assignee_id, self._chore_id
+            ),
+            # --- 5. Ownership tracking ---
+            # INDEPENDENT: assignee's own name
+            # SHARED_FIRST: winner's name (stored in other assignees' data)
+            # SHARED_ALL: list of assignee names
+            const.ATTR_CLAIMED_BY: self._normalize_name_list(
+                assignee_chore_data.get(const.DATA_CHORE_CLAIMED_BY)
+            ),
+            const.ATTR_COMPLETED_BY: self._normalize_name_list(
+                assignee_chore_data.get(const.DATA_CHORE_COMPLETED_BY)
+            ),
+            # --- 6. Timestamps (last_* events) ---
+            const.ATTR_LAST_CLAIMED: last_claimed,
+            const.ATTR_LAST_APPROVED: last_approved,
+            const.ATTR_LAST_COMPLETED: last_completed,
+            const.ATTR_LAST_DISAPPROVED: last_disapproved,
+            const.ATTR_LAST_OVERDUE: last_overdue,
+            # --- 7. Statistics (counts) ---
             const.ATTR_CHORE_POINTS_EARNED: points_earned,
             const.ATTR_CHORE_CLAIMS_COUNT: claims_count,
             const.ATTR_CHORE_COMPLETED_COUNT: completed_count,
             const.ATTR_CHORE_APPROVALS_COUNT: approvals_count,
             const.ATTR_CHORE_DISAPPROVED_COUNT: disapproved_count,
             const.ATTR_CHORE_OVERDUE_COUNT: overdue_count,
-            # --- 5. Statistics (streaks) ---
+            # --- 8. Statistics (streaks) ---
             const.ATTR_CHORE_CURRENT_STREAK: current_streak,
             const.ATTR_CHORE_LONGEST_STREAK: highest_streak,
             const.ATTR_CHORE_LAST_LONGEST_STREAK_DATE: last_longest_streak_date,
@@ -1090,26 +1144,6 @@ class AssigneeChoreStatusSensor(ChoreOpsCoordinatorEntity, SensorEntity):
             const.ATTR_CHORE_MISSED_COUNT: missed_count,
             const.ATTR_CHORE_LAST_MISSED: assignee_chore_data.get(
                 const.DATA_USER_CHORE_DATA_LAST_MISSED
-            ),
-            # --- 6. Timestamps (last_* events) ---
-            const.ATTR_LAST_CLAIMED: last_claimed,
-            const.ATTR_LAST_APPROVED: last_approved,
-            const.ATTR_LAST_COMPLETED: last_completed,
-            const.ATTR_LAST_DISAPPROVED: last_disapproved,
-            const.ATTR_LAST_OVERDUE: last_overdue,
-            # --- 7. Chore claim/completion tracking (all chore types) ---
-            # INDEPENDENT: assignee's own name
-            # SHARED_FIRST: winner's name (stored in other assignees' data)
-            # SHARED_ALL: list of assignee names (converted to comma-separated string)
-            const.ATTR_CLAIMED_BY: self._format_claimed_completed_by(
-                assignee_chore_data.get(const.DATA_CHORE_CLAIMED_BY)
-            ),
-            const.ATTR_COMPLETED_BY: self._format_claimed_completed_by(
-                assignee_chore_data.get(const.DATA_CHORE_COMPLETED_BY)
-            ),
-            # Use coordinator helper to correctly handle INDEPENDENT (per-assignee) vs SHARED (chore-level)
-            const.ATTR_APPROVAL_PERIOD_START: self.coordinator.chore_manager.get_approval_period_start(
-                self._assignee_id, self._chore_id
             ),
         }
 
@@ -1139,16 +1173,6 @@ class AssigneeChoreStatusSensor(ChoreOpsCoordinatorEntity, SensorEntity):
                 .get(const.DATA_USER_CHORE_DATA_PERIOD_APPROVED, const.DEFAULT_ZERO)
             )
             attributes[const.ATTR_CHORE_APPROVALS_TODAY] = today_approvals
-
-        # Add can_claim and can_approve computed attributes using coordinator helpers
-        can_claim, _ = self.coordinator.chore_manager.can_claim_chore(
-            self._assignee_id, self._chore_id
-        )
-        can_approve, _ = self.coordinator.chore_manager.can_approve_chore(
-            self._assignee_id, self._chore_id
-        )
-        attributes[const.ATTR_CAN_CLAIM] = can_claim
-        attributes[const.ATTR_CAN_APPROVE] = can_approve
 
         # Add claim, approve, disapprove button entity ids to attributes for direct ui access.
         button_types = [
@@ -1351,11 +1375,9 @@ class AssigneePointsSensor(ChoreOpsCoordinatorEntity, SensorEntity):
             temporal_earned_floor,
             highest_balance,
         )
-        if earned_all_time < all_time_earned_floor:
-            earned_all_time = all_time_earned_floor
+        earned_all_time = max(earned_all_time, all_time_earned_floor)
 
-        if highest_balance < earned_all_time:
-            highest_balance = earned_all_time
+        highest_balance = max(highest_balance, earned_all_time)
 
         # Keep all-time net coherent with current balance when source data is inconsistent.
         spent_all_time = round(

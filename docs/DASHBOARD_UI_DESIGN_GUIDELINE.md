@@ -20,10 +20,48 @@ A chore state should be communicated through one or more of these channels, depe
 1. **Text only**: localized label (`Upcoming`, `In Progress`, etc.)
 2. **Text + state color**: label rendered with the mapped Lovelace CSS variable
 3. **Primary icon color**: chore icon color changes by state
-4. **Action/status icon**: secondary icon communicates available action or lock reason
+4. **Action/status icon**: secondary icon communicates available action or block reason
 5. **Card accent/border**: outline or left accent border uses state color for quick scanning
 
 Use at least two channels on compact cards and at least three channels on dense admin grids.
+
+### State source precedence (required)
+
+For state and status rendering, use canonical backend attributes before any
+frontend-derived calculation:
+
+1. `global_state` (preferred for shared/global status presentation)
+2. `state` (fallback when `global_state` is unavailable)
+3. `can_claim` + `block_reason` (action gating and blocker semantics)
+
+Derived UI calculations are allowed only when a canonical attribute does not exist
+(for example, rendering a shared-all progress fraction from
+`assigned_user_names` and `completed_by`).
+
+Do not replace canonical status attributes with frontend heuristics when those
+attributes are available.
+
+### State vs global-state responsibilities (required)
+
+Use a strict responsibility split to avoid mixed semantics in shared chores:
+
+- `state` (per-user state) controls per-user presentation channels only:
+  - line-2 status text
+  - primary chore icon color
+  - per-user action affordance styling
+- `global_state` controls shared/global presentation channels only:
+  - shared badge color (`shared_all`, `shared_first`, `rotation`)
+  - shared progress-bar color and completion semantics
+  - line-3 shared progress/completion status gating and labels
+
+Shared-all completion gating rule:
+
+- Treat `completed_in_part` as partial/in-progress global state (not full complete).
+- Render success/green shared-all badge and progress bar only when `global_state`
+  is globally complete (`completed`, `already_approved`, or
+  `completed_by_other`).
+- Numeric progress completion (`X/X`) may be shown as progress context, but must
+  not by itself force global-complete color semantics.
 
 ## Typography and emphasis
 
@@ -70,6 +108,26 @@ For blocked or exception states (`waiting`, `missed`, `not_my_turn`, `completed_
 - Disable primary action button
 - Replace action button with status indicator icon
 
+### Claim blocker contract (`can_claim` + `block_reason`)
+
+Use claim capability as the single action truth for claim buttons:
+
+- If `can_claim` is `true`, claim action is enabled and `block_reason` should be `null`.
+- If `can_claim` is `false`, claim action is disabled and `block_reason` should be one of:
+  - `completed_by_other`
+  - `already_approved`
+  - `pending_claim`
+  - `waiting`
+  - `not_my_turn`
+  - `missed_locked`
+
+UI behavior rule:
+
+- Disable claim action whenever `can_claim` is `false`.
+- Show a localized blocker label derived from `block_reason` only for blocked/exception presentation.
+- Treat `state` as display semantics only (color/icon/text), not as claim-action gating.
+- Keep terminal completion display state as `completed` (there is no separate `approved` display state).
+
 For high-attention states (`due`, `overdue`):
 
 - Apply state color to icon and border accent
@@ -96,14 +154,14 @@ Placement and visual rules:
 | ----------- | ------------- | ------------ | --------------------------- | ------------------- | --------------------------------- |
 | `pending`   | Upcoming      | `#4A4A4A`    | `var(--primary-text-color)` | `mdi:arrow-right`   | Neutral icon; start affordance    |
 | `due`       | Due           | `#FF9800`    | `var(--warning-color)`      | `mdi:arrow-right`   | Orange highlight on icon/accent   |
-| `claimed`   | In Progress   | `#9C27B0`    | `var(--primary-color)`\*    | `mdi:check-all`     | Solid action button; undo visible |
+| `claimed`   | In Progress   | `#A957FA`    | `var(--primary-color)`\*    | `mdi:check-all`     | Solid action button; undo visible |
 | `completed` | Done          | `#4CAF50`    | `var(--success-color)`      | `mdi:check`         | Success styling; action disabled  |
 | `overdue`   | Overdue       | `#F44336`    | `var(--error-color)`        | `mdi:alert-octagon` | Strong alert styling              |
 
 \* Optional theme override for claimed purple:
 
 ```yaml
-choreops-claimed-color: "#9C27B0"
+choreops-claimed-color: "#A957FA"
 ```
 
 ## Blocked and exception states (per-user)
@@ -122,6 +180,9 @@ choreops-claimed-color: "#9C27B0"
 - Global progress may be partial (`claimed_in_part`, `completed_in_part`)
 - Keep card visible until global completion
 - Show team progress context (for example `📊 1/3 Done`)
+- Add a compact progress marker (for example 4px micro progress bar) on each shared-all chore row
+- When shared-all reaches full completion, accent the shared badge icon (`mdi:account-group`) with success color
+- Use explicit completion copy for full completion (for example `Completed: 3/3`)
 
 ### Shared First (race)
 

@@ -9,16 +9,16 @@
 
 ## Summary & immediate steps
 
-| Phase / Step                                | Description                                                                                  | % complete | Quick notes                                                   |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------: | ------------------------------------------------------------- |
-| Phase 1 – UX foundation + tooling           | Create UX-focused dashboard builder agent and standardize template naming/version strategy   |        100 | Completed: agent created, boundaries codified, toolkit linked |
-| Phase 2 – Dev preload workflow              | Make rapid local dashboard testing easy using scenario-based live preload tooling            |        100 | Completed: script modernized + docs + targeted tests          |
-| Phase 3 – User template modernization       | Build modern minimal-v2 first (header + chores), then gamification-v2 from reusable patterns |          0 | Keep existing v1 templates intact                             |
-| Phase 4 – Admin modernization + docs/polish | Modernize admin templates and finalize docs/contracts/validation checklist                   |          0 | Align with template and UI guidelines                         |
+| Phase / Step                                | Description                                                                                    | % complete | Quick notes                                                   |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------: | ------------------------------------------------------------- |
+| Phase 1 – UX foundation + tooling           | Create UX-focused dashboard builder agent and standardize template naming/version strategy     |        100 | Completed: agent created, boundaries codified, toolkit linked |
+| Phase 2 – Dev preload workflow              | Make rapid local dashboard testing easy using scenario-based live preload tooling              |        100 | Completed: script modernized + docs + targeted tests          |
+| Phase 3 – User template modernization       | Build new user-essential-v1 first (header + chores), then expand to additional user profile(s) |         15 | Step 1 started from existing template baseline                |
+| Phase 4 – Admin modernization + docs/polish | Modernize admin templates and finalize docs/contracts/validation checklist                     |          0 | Align with template and UI guidelines                         |
 
 1. **Key objective** – Deliver modern, app-like dashboards while preserving existing templates and runtime stability.
 2. **Summary of recent work** – Completed Phase 2 preload workflow: modernized live scenario loader, added seeded UX state-driver scenario coverage (waiting/due/overdue), and updated utility/dashboard documentation for repeatable local UX loops.
-3. **Next steps (short term)** – Start Phase 3 (user template modernization: additive `*-v2` templates) while keeping v1 templates unchanged.
+3. **Next steps (short term)** – Continue Phase 3 with `user-essential-v1` render modernization while preserving existing template contracts.
 4. **Risks / blockers**
    - Home Assistant dashboard constraints (no custom card authoring in this initiative) can limit advanced interaction patterns.
    - Dependency drift risk when introducing new custom card usage across templates.
@@ -110,28 +110,36 @@
 
 ### Phase 3 – User template modernization
 
-- **Goal**: Deliver additive modern user templates by piloting minimal-v2 and reusing proven blocks in gamification-v2.
+- **Goal**: Deliver additive modern user templates starting with `user-essential-v1`, then expand to additional user profile template(s).
+- **Critical template integrity gate (mandatory for every new template completion)**
+  - Preserve template header format, snippet contracts, and metadata stamp placement exactly as defined in the guides.
+  - Preserve translation and graceful error-handling patterns (no regressions in fallback behavior, helper validation, or missing-entity handling).
+  - Keep structure easy to follow/maintain: do not collapse or obscure existing logical sections.
+  - Default implementation strategy: start from existing template baseline, then focus changes in render sections first.
+  - **Completion gate question (must be explicitly answered for each new template):**
+    - "Did this template keep headers, translation wiring, graceful error handling, and logical sectioning intact while limiting scope mainly to render changes?"
 - **Steps / detailed work items**
-  1. [ ] Create new canonical minimal template variant (`user-minimal-v2.yaml`) as additive file; keep `user-minimal-v1.yaml` unchanged.
-         **Files**: `choreops-dashboards/templates/user-minimal-v1.yaml`, `choreops-dashboards/templates/user-minimal-v2.yaml` (new).
+  1. [x] Create new canonical essential template variant (`user-essential-v1.yaml`) as additive file; keep existing user templates unchanged.
+         **Files**: `choreops-dashboards/templates/user-minimal-v1.yaml`, `choreops-dashboards/templates/user-essential-v1.yaml` (new).
          **Line anchors**: existing minimal template header/card structure lines 1-50.
-  2. [ ] Implement modernized **header card** and **chores card** in minimal-v2 using guideline state channels, preserving dynamic helper lookup/snippet contracts and metadata stamp placement.
-         **Files**: `choreops-dashboards/templates/user-minimal-v2.yaml`, `docs/DASHBOARD_UI_DESIGN_GUIDELINE.md`.
+  2. [ ] Implement modernized **header card** and **chores card** in `user-essential-v1` using guideline state channels, preserving dynamic helper lookup/snippet contracts and metadata stamp placement.
+         **Files**: `choreops-dashboards/templates/user-essential-v1.yaml`, `docs/DASHBOARD_UI_DESIGN_GUIDELINE.md`.
          **Line anchors**: snippet/stamp rules in template guide lines 212-260; UI state model lines 17-101.
-  3. [ ] Register minimal-v2 in canonical registry with accurate dependency declarations (required/recommended) and preference doc linkage.
-         **Files**: `choreops-dashboards/dashboard_registry.json`, `choreops-dashboards/preferences/user-minimal-v2.md` (new).
+  3. [ ] Register `user-essential-v1` in canonical registry with accurate dependency declarations (required/recommended) and preference doc linkage.
+         **Files**: `choreops-dashboards/dashboard_registry.json`, `choreops-dashboards/preferences/user-essential-v1.md` (new).
          **Line anchors**: existing template registry contract lines 1-125.
-  4. [ ] Build gamification-v2 by reusing minimal-v2 card patterns/snippets where practical; update only the cards needed to modernize layout and interactions first.
-         **Files**: `choreops-dashboards/templates/user-gamification-v1.yaml`, `choreops-dashboards/templates/user-gamification-v2.yaml` (new).
+  4. [ ] Define and implement the second user template profile naming/intent, then build the additive template from existing baseline with render-focused changes first.
+         **Files**: `choreops-dashboards/templates/user-gamification-v1.yaml`, `choreops-dashboards/templates/user-<tbd>-v1.yaml` (new).
          **Line anchors**: current gamification template baseline lines 1-50.
-  5. [ ] Register gamification-v2 + preferences and ensure dependency declarations cover all `custom:*` usage.
-         **Files**: `choreops-dashboards/dashboard_registry.json`, `choreops-dashboards/preferences/user-gamification-v2.md` (new).
+  5. [ ] Register second user profile template + preferences and ensure dependency declarations cover all `custom:*` usage.
+         **Files**: `choreops-dashboards/dashboard_registry.json`, `choreops-dashboards/preferences/user-<tbd>-v1.md` (new).
          **Line anchors**: dependency contract expectations in test file lines 33-152.
   6. [ ] Sync canonical assets into vendored runtime mirror and verify parity before any integration-side flow/testing updates.
          **Files**: `utils/sync_dashboard_assets.py` (execution), `custom_components/choreops/dashboards/*` (synced outputs).
          **Line anchors**: required sync/parity workflow in template guide lines 67-85.
 - **Key issues**
   - Must keep all templates as single-view outputs and preserve dual Jinja delimiter rules.
+  - Headers, translations, graceful error handling, and clear template organization are non-negotiable quality gates for every new template.
   - New visual complexity must remain performant in HA dashboard runtime.
 
 ### Phase 4 – Admin modernization + docs/polish
@@ -197,7 +205,7 @@ If new user-facing options/status text is introduced for UX iteration workflow, 
 
 - [x] New agent spec created for dashboard UX implementation (`.github/agents/dashboard-ux-builder.agent.md`)
 - [x] Live preload utility modernized for scenario-based local testing
-- [ ] New additive user templates: minimal-v2 + gamification-v2
+- [ ] New additive user templates: user-essential-v1 + second user profile template
 - [ ] New additive admin templates: shared-v2 + peruser-v2
 - [ ] Registry/preferences/translations updated in canonical dashboard repo
 - [ ] Vendored assets synced + parity verified

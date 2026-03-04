@@ -60,7 +60,9 @@ async def test_config_flow_use_existing_v40beta1(
 ) -> None:
     """Test config flow with existing v40beta1 choreops_data file (already wrapped format)."""
     # Place v40beta1 sample as active choreops_data file (already has wrapper)
-    storage_path = Path(hass.config.path(".storage", "choreops_data"))
+    storage_path = Path(
+        hass.config.path(".storage", const.STORAGE_DIRECTORY, const.STORAGE_KEY)
+    )
     storage_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Load v40beta1 sample (already in wrapped format)
@@ -126,7 +128,9 @@ async def test_config_flow_use_existing_v30(
 ) -> None:
     """Test config flow with existing v30 choreops_data file (raw format with legacy schema)."""
     # Place v30 sample as active choreops_data file (raw format, no version wrapper)
-    storage_path = Path(hass.config.path(".storage", "choreops_data"))
+    storage_path = Path(
+        hass.config.path(".storage", const.STORAGE_DIRECTORY, const.STORAGE_KEY)
+    )
     storage_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Load v30 sample (raw data format with storage_version: 0)
@@ -190,7 +194,9 @@ async def test_config_flow_use_existing_already_wrapped(
 ) -> None:
     """Test config flow with existing file that already has version wrapper."""
     # Place file with proper HA storage format
-    storage_path = Path(hass.config.path(".storage", "choreops_data"))
+    storage_path = Path(
+        hass.config.path(".storage", const.STORAGE_DIRECTORY, const.STORAGE_KEY)
+    )
     storage_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Load v40beta1 sample (already in wrapped format)
@@ -257,7 +263,9 @@ async def test_config_flow_second_entry_gets_indexed_default_title(
     )
     existing_entry.add_to_hass(hass)
 
-    storage_path = Path(hass.config.path(".storage", "choreops_data"))
+    storage_path = Path(
+        hass.config.path(".storage", const.STORAGE_DIRECTORY, const.STORAGE_KEY)
+    )
     storage_path.parent.mkdir(parents=True, exist_ok=True)
     sample_path = (
         Path(__file__).parent / "migration_samples" / "kidschores_data_40beta1"
@@ -294,7 +302,9 @@ async def test_use_current_normalizes_integer_bonus_penalty_applies(
     mock_setup_entry: AsyncMock,
 ) -> None:
     """Use-current import should normalize integer apply counters."""
-    storage_path = Path(hass.config.path(".storage", "choreops_data"))
+    storage_path = Path(
+        hass.config.path(".storage", const.STORAGE_DIRECTORY, const.STORAGE_KEY)
+    )
     storage_path.parent.mkdir(parents=True, exist_ok=True)
 
     sample_path = (

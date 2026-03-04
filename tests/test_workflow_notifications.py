@@ -1125,7 +1125,7 @@ class TestDueDateReminders:
         )
         assert context["state"] == const.CHORE_STATE_WAITING
         assert context["can_claim"] is False
-        assert context["lock_reason"] == const.CHORE_STATE_WAITING
+        assert context["claim_mode"] == const.CHORE_CLAIM_MODE_BLOCKED_WAITING_WINDOW
 
 
 class TestMultiplierChangeNotifications:

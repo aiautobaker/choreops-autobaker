@@ -2972,7 +2972,10 @@ class TestDueWindowClaimLockBehavior:
         assert chore_sensor_before is not None
         assert chore_sensor_before.state == CHORE_STATE_WAITING
         assert chore_sensor_before.attributes.get(ATTR_CAN_CLAIM) is False
-        assert chore_sensor_before.attributes.get("lock_reason") == CHORE_STATE_WAITING
+        assert (
+            chore_sensor_before.attributes.get("claim_mode")
+            == const.CHORE_CLAIM_MODE_BLOCKED_WAITING_WINDOW
+        )
         assert chore_sensor_before.attributes.get("available_at") is not None
 
         # Phase 5 contract: waiting is display-only (derived), not persisted
@@ -3016,7 +3019,10 @@ class TestDueWindowClaimLockBehavior:
         chore_sensor_in_window = hass.states.get(chore_in_window["eid"])
         assert chore_sensor_in_window is not None
         assert chore_sensor_in_window.attributes.get(ATTR_CAN_CLAIM) is True
-        assert chore_sensor_in_window.attributes.get("lock_reason") is None
+        assert (
+            chore_sensor_in_window.attributes.get("claim_mode")
+            == const.CHORE_CLAIM_MODE_CLAIMABLE
+        )
 
         allowed_claim = await claim_chore(
             hass,
@@ -3068,7 +3074,10 @@ class TestDueWindowClaimLockBehavior:
             zoe_id, chore_id
         )
         assert status_ctx_pre["state"] == CHORE_STATE_WAITING
-        assert status_ctx_pre["lock_reason"] == CHORE_STATE_WAITING
+        assert (
+            status_ctx_pre["claim_mode"]
+            == const.CHORE_CLAIM_MODE_BLOCKED_WAITING_WINDOW
+        )
         assert status_ctx_pre["available_at"] is not None
 
         # In-window: waiting lock clears and claim becomes allowed
@@ -3092,7 +3101,7 @@ class TestDueWindowClaimLockBehavior:
         status_ctx_in_window = coordinator.chore_manager.get_chore_status_context(
             zoe_id, chore_id
         )
-        assert status_ctx_in_window["lock_reason"] is None
+        assert status_ctx_in_window["claim_mode"] == const.CHORE_CLAIM_MODE_CLAIMABLE
         assert status_ctx_in_window["available_at"] is None
 
     @pytest.mark.asyncio
@@ -3124,7 +3133,10 @@ class TestDueWindowClaimLockBehavior:
         waiting_sensor = hass.states.get(chore_waiting["eid"])
         assert waiting_sensor is not None
         assert waiting_sensor.state == CHORE_STATE_WAITING
-        assert waiting_sensor.attributes.get("lock_reason") == CHORE_STATE_WAITING
+        assert (
+            waiting_sensor.attributes.get("claim_mode")
+            == const.CHORE_CLAIM_MODE_BLOCKED_WAITING_WINDOW
+        )
         assert waiting_sensor.attributes.get("available_at") is not None
 
         await hass.services.async_call(
@@ -3144,7 +3156,9 @@ class TestDueWindowClaimLockBehavior:
         due_sensor = hass.states.get(chore_due["eid"])
         assert due_sensor is not None
         assert due_sensor.attributes.get(ATTR_CAN_CLAIM) is True
-        assert due_sensor.attributes.get("lock_reason") is None
+        assert (
+            due_sensor.attributes.get("claim_mode") == const.CHORE_CLAIM_MODE_CLAIMABLE
+        )
         assert due_sensor.attributes.get("available_at") is None
 
     @pytest.mark.asyncio
@@ -3182,7 +3196,7 @@ class TestDueWindowClaimLockBehavior:
             zoe_id, chore_id
         )
         assert status_ctx["state"] == CHORE_STATE_PENDING
-        assert status_ctx["lock_reason"] is None
+        assert status_ctx["claim_mode"] == const.CHORE_CLAIM_MODE_CLAIMABLE
         assert status_ctx["available_at"] is None
 
         dashboard = get_dashboard_helper(hass, "zoe")
@@ -3192,5 +3206,8 @@ class TestDueWindowClaimLockBehavior:
         assert chore_sensor is not None
         assert chore_sensor.state == CHORE_STATE_PENDING
         assert chore_sensor.attributes.get(ATTR_CAN_CLAIM) is True
-        assert chore_sensor.attributes.get("lock_reason") is None
+        assert (
+            chore_sensor.attributes.get("claim_mode")
+            == const.CHORE_CLAIM_MODE_CLAIMABLE
+        )
         assert chore_sensor.attributes.get("available_at") is None

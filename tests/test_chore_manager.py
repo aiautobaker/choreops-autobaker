@@ -1552,6 +1552,8 @@ class TestUndoWorkflow:
             "chore-1": {
                 const.DATA_USER_CHORE_DATA_STATE: const.CHORE_STATE_APPROVED,
                 const.DATA_USER_CHORE_DATA_TOTAL_POINTS: 10.0,
+                const.DATA_CHORE_CLAIMED_BY: ["Alice"],
+                const.DATA_CHORE_COMPLETED_BY: ["Alice"],
             }
         }
 
@@ -1563,6 +1565,8 @@ class TestUndoWorkflow:
             assignee_chore_data[const.DATA_USER_CHORE_DATA_STATE]
             == const.CHORE_STATE_PENDING
         )
+        assert const.DATA_CHORE_CLAIMED_BY not in assignee_chore_data
+        assert const.DATA_CHORE_COMPLETED_BY not in assignee_chore_data
 
 
 # ============================================================================
@@ -1586,7 +1590,7 @@ class TestCompletionCriteria:
         assignee1_data = chore_manager._coordinator.assignees_data["assignee-1"][
             const.DATA_USER_CHORE_DATA
         ]["chore-1"]
-        assert assignee1_data.get(const.DATA_CHORE_COMPLETED_BY) == "Alice"
+        assert assignee1_data.get(const.DATA_CHORE_COMPLETED_BY) == ["Alice"]
 
         # Verify Bob's completed_by is not affected
         assignee2_chores = chore_manager._coordinator.assignees_data["assignee-2"].get(
@@ -1617,7 +1621,7 @@ class TestCompletionCriteria:
         assignee2_data = mock_coordinator.assignees_data["assignee-2"][
             const.DATA_USER_CHORE_DATA
         ]["chore-1"]
-        assert assignee2_data.get(const.DATA_CHORE_COMPLETED_BY) == "Alice"
+        assert assignee2_data.get(const.DATA_CHORE_COMPLETED_BY) == ["Alice"]
 
     def test_shared_completion_appends_to_list(
         self,

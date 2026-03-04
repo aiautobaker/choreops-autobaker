@@ -464,8 +464,8 @@ Common keys (not exhaustive, keys added at runtime):
 - total_points: float
 - periods: AssigneeChoreDataPeriods
 - last_longest_streak_all_time: int
-- claimed_by: str | list[str] (who claimed)
-- completed_by: str | list[str] (who completed)
+- claimed_by: list[str] (who claimed)
+- completed_by: list[str] (who completed)
 
 Note: Notification timestamps (last_notified_due_window, last_notified_due_reminder)
 are stored in a separate DATA_NOTIFICATIONS bucket owned by NotificationManager

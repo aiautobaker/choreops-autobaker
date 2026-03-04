@@ -381,11 +381,16 @@ async def find_choreops_entry_id(session: aiohttp.ClientSession, ha_url: str) ->
 async def reset_transactional_data(
     session: aiohttp.ClientSession,
     ha_url: str,
+    entry_id: str,
 ) -> None:
     """Call the transactional reset service before loading entities."""
     async with session.post(
         f"{ha_url}/api/services/{DOMAIN}/reset_transactional_data",
-        json={"confirm_destructive": True, "scope": "global"},
+        json={
+            "confirm_destructive": True,
+            "scope": "global",
+            SERVICE_FIELD_CONFIG_ENTRY_ID: entry_id,
+        },
     ) as response:
         if response.status != 200:
             response_text = await response.text()
@@ -496,6 +501,55 @@ async def add_entity_via_options_flow(
     return ENTITY_ADD_STATUS_FAILED
 
 
+async def refresh_duplicate_chore_due_date(
+    session: aiohttp.ClientSession,
+    ha_url: str,
+    entry_id: str,
+    chore: dict[str, Any],
+) -> None:
+    """Refresh due date for an already-existing chore when scenario uses due_date.
+
+    This keeps `now`/`now+offset` scenario shorthand deterministic across repeated
+    loads even when a chore add is skipped as duplicate.
+    """
+    if "due_date" not in chore:
+        return
+
+    chore_name = chore.get("name")
+    if not isinstance(chore_name, str) or not chore_name:
+        return
+
+    payload: dict[str, Any] = {
+        SERVICE_FIELD_CONFIG_ENTRY_ID: entry_id,
+        "chore_name": chore_name,
+        "due_date": resolve_due_date_value(chore["due_date"]),
+    }
+
+    completion_criteria = chore.get("completion_criteria")
+    assigned_to = chore.get("assigned_to", [])
+    if (
+        completion_criteria == "independent"
+        and isinstance(assigned_to, list)
+        and len(assigned_to) == 1
+        and isinstance(assigned_to[0], str)
+        and assigned_to[0]
+    ):
+        payload["user_name"] = assigned_to[0]
+
+    async with session.post(
+        f"{ha_url}/api/services/{DOMAIN}/set_chore_due_date",
+        json=payload,
+    ) as response:
+        if response.status == 200:
+            print(f"   🔄 Refreshed due date: {chore_name}")  # noqa: T201
+            return
+        body = await response.text()
+        print(  # noqa: T201
+            f"   ⚠️ Could not refresh due date for {chore_name} "
+            f"(status={response.status}): {body[:180]}"
+        )
+
+
 def build_state_seed_payload(
     action: dict[str, Any], entry_id: str
 ) -> tuple[str, dict[str, Any]]:
@@ -538,6 +592,91 @@ async def run_state_seed_actions(
                 body = await response.text()
                 print(  # noqa: T201
                     f"   ❌ {service} (status={response.status}): {body[:180]}"
+                )
+        await asyncio.sleep(delay_seconds)
+
+    return success_count, total_count
+
+
+async def normalize_rotation_turns(
+    session: aiohttp.ClientSession,
+    ha_url: str,
+    entry_id: str,
+    chores: list[dict[str, Any]],
+    delay_seconds: float,
+) -> tuple[int, int]:
+    """Reset/set rotation turn for rotation chores to ensure deterministic seeds.
+
+    Behavior:
+    - For every scenario chore with rotation criteria, call `reset_rotation`
+      so turn starts at the first assigned user.
+    - If scenario chore defines `rotation_turn_user_name`, call
+      `set_rotation_turn` after reset to force a specific starting user.
+    """
+    success_count = 0
+    total_count = 0
+    rotation_criteria = {"rotation_simple", "rotation_smart"}
+
+    rotation_chores = [
+        chore
+        for chore in chores
+        if str(chore.get("completion_criteria", "")) in rotation_criteria
+    ]
+
+    if not rotation_chores:
+        return success_count, total_count
+
+    print("\n🔁 Normalizing rotation turns...")  # noqa: T201
+
+    for chore in rotation_chores:
+        chore_name = str(chore.get("name", "")).strip()
+        if not chore_name:
+            continue
+
+        reset_payload: dict[str, Any] = {
+            SERVICE_FIELD_CONFIG_ENTRY_ID: entry_id,
+            "chore_name": chore_name,
+        }
+        total_count += 1
+        async with session.post(
+            f"{ha_url}/api/services/{DOMAIN}/reset_rotation",
+            json=reset_payload,
+        ) as response:
+            if response.status == 200:
+                success_count += 1
+                print(f"   ✅ reset_rotation: {chore_name}")  # noqa: T201
+            else:
+                body = await response.text()
+                print(  # noqa: T201
+                    f"   ❌ reset_rotation: {chore_name} "
+                    f"(status={response.status}): {body[:180]}"
+                )
+        await asyncio.sleep(delay_seconds)
+
+        target_user_name = str(chore.get("rotation_turn_user_name", "")).strip()
+        if not target_user_name:
+            continue
+
+        set_payload: dict[str, Any] = {
+            SERVICE_FIELD_CONFIG_ENTRY_ID: entry_id,
+            "chore_name": chore_name,
+            "user_name": target_user_name,
+        }
+        total_count += 1
+        async with session.post(
+            f"{ha_url}/api/services/{DOMAIN}/set_rotation_turn",
+            json=set_payload,
+        ) as response:
+            if response.status == 200:
+                success_count += 1
+                print(  # noqa: T201
+                    f"   ✅ set_rotation_turn: {chore_name} → {target_user_name}"
+                )
+            else:
+                body = await response.text()
+                print(  # noqa: T201
+                    f"   ❌ set_rotation_turn: {chore_name} → {target_user_name} "
+                    f"(status={response.status}): {body[:180]}"
                 )
         await asyncio.sleep(delay_seconds)
 
@@ -595,7 +734,7 @@ async def load_scenario_to_live_instance(args: argparse.Namespace) -> None:
 
         if args.reset:
             print("🗑️ Resetting transactional data...")  # noqa: T201
-            await reset_transactional_data(session, args.ha_url)
+            await reset_transactional_data(session, args.ha_url, entry_id)
             await asyncio.sleep(1.0)
             print("✅ Reset complete")  # noqa: T201
 
@@ -630,6 +769,13 @@ async def load_scenario_to_live_instance(args: argparse.Namespace) -> None:
                 elif add_status == ENTITY_ADD_STATUS_SKIPPED:
                     total_skipped += 1
                     print(f"   ⏭️ {name} (already exists)")  # noqa: T201
+                    if menu_key == MENU_MANAGE_CHORE:
+                        await refresh_duplicate_chore_due_date(
+                            session,
+                            args.ha_url,
+                            entry_id,
+                            entity,
+                        )
                 else:
                     total_failed += 1
                     print(f"   ❌ {name}")  # noqa: T201
@@ -647,6 +793,21 @@ async def load_scenario_to_live_instance(args: argparse.Namespace) -> None:
         await _bulk_add(
             "🧹 Adding chores...", MENU_MANAGE_CHORE, chores, build_chore_payload
         )
+
+        if args.reset:
+            rotation_success, rotation_total = await normalize_rotation_turns(
+                session,
+                args.ha_url,
+                entry_id,
+                chores,
+                args.delay,
+            )
+            if rotation_total:
+                print(  # noqa: T201
+                    f"✅ Rotation normalization succeeded: "
+                    f"{rotation_success}/{rotation_total}"
+                )
+
         await _bulk_add(
             "🎁 Adding rewards...", MENU_MANAGE_REWARD, rewards, build_reward_payload
         )

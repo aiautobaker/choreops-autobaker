@@ -17,6 +17,7 @@ from custom_components.choreops import const
 
 # Import test constants from helpers (not from const.py - Rule 0)
 from tests.helpers.constants import (
+    CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN,
     CHORE_STATE_NOT_MY_TURN,
     CHORE_STATE_PENDING,
     SERVICE_FIELD_CHORE_ID,
@@ -188,7 +189,10 @@ async def test_set_rotation_turn_service(
             )
             assert sensor.state == CHORE_STATE_NOT_MY_TURN
             assert sensor.attributes.get("can_claim") is False
-            assert sensor.attributes.get("lock_reason") == "not_my_turn"
+            assert (
+                sensor.attributes.get("claim_mode")
+                == CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN
+            )
             # turn_user_name should point to new holder
             assert sensor.attributes.get(const.ATTR_CHORE_TURN_USER_NAME) == new_name
 

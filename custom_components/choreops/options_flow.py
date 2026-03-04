@@ -3824,6 +3824,11 @@ class ChoreOpsOptionsFlowHandler(config_entries.OptionsFlow):
         """
         from .helpers import dashboard_builder as builder, dashboard_helpers as dh
 
+        # Refresh manifest-backed template catalog on generator entry so local
+        # sync updates are visible without requiring a Home Assistant restart.
+        dh.reset_manifest_template_definitions_cache()
+        await dh.async_prime_manifest_template_definitions(self.hass)
+
         errors: dict[str, str] = {}
         available_release_tags: list[str] = []
         installed_release_version = await dh.async_get_local_dashboard_release_version(

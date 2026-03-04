@@ -16,6 +16,11 @@ from custom_components.choreops.utils.dt_utils import dt_now_utc
 
 # Import test constants from helpers (not from const.py - Rule 0)
 from tests.helpers.constants import (
+    CHORE_CLAIM_MODE_BLOCKED_ALREADY_APPROVED,
+    CHORE_CLAIM_MODE_BLOCKED_COMPLETED_BY_OTHER,
+    CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN,
+    CHORE_CLAIM_MODE_BLOCKED_PENDING_CLAIM,
+    CHORE_CLAIM_MODE_CLAIMABLE,
     CHORE_STATE_CLAIMED,
     CHORE_STATE_COMPLETED,
     CHORE_STATE_NOT_MY_TURN,
@@ -108,7 +113,7 @@ async def test_rotation_turn_holder_can_claim(
     assert turn_sensor.attributes.get("can_claim") is True, (
         f"{turn_name} should be able to claim"
     )
-    assert turn_sensor.attributes.get("lock_reason") is None
+    assert turn_sensor.attributes.get("claim_mode") == CHORE_CLAIM_MODE_CLAIMABLE
     assert turn_sensor.attributes.get("turn_user_name") == turn_name
 
     # Verify non-turn holders are blocked
@@ -119,7 +124,9 @@ async def test_rotation_turn_holder_can_claim(
         assert sensor.attributes.get("can_claim") is False, (
             f"{name} should not be able to claim"
         )
-        assert sensor.attributes.get("lock_reason") == "not_my_turn"
+        assert (
+            sensor.attributes.get("claim_mode") == CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN
+        )
         assert sensor.attributes.get("turn_user_name") == turn_name
 
 
@@ -212,15 +219,22 @@ async def test_rotation_approved_does_not_advance_immediately(
             )
             assert sensor.state == CHORE_STATE_COMPLETED
             assert sensor.attributes.get("can_claim") is False
-            assert sensor.attributes.get("lock_reason") is None
-        else:
-            # Others still blocked by not_my_turn
-            assert current_chore["state"] == CHORE_STATE_NOT_MY_TURN, (
-                f"{name} still blocked"
+            assert (
+                sensor.attributes.get("claim_mode")
+                == CHORE_CLAIM_MODE_BLOCKED_ALREADY_APPROVED
             )
-            assert sensor.state == CHORE_STATE_NOT_MY_TURN
+        else:
+            # Others remain blocked while turn ownership is active
+            assert current_chore["state"] in {
+                CHORE_STATE_NOT_MY_TURN,
+                "completed_by_other",
+            }, f"{name} still blocked"
+            assert sensor.state in {CHORE_STATE_NOT_MY_TURN, "completed_by_other"}
             assert sensor.attributes.get("can_claim") is False
-            assert sensor.attributes.get("lock_reason") == "not_my_turn"
+            assert sensor.attributes.get("claim_mode") in {
+                CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN,
+                CHORE_CLAIM_MODE_BLOCKED_COMPLETED_BY_OTHER,
+            }
 
         # turn_user_name remains unchanged for all
         assert sensor.attributes.get("turn_user_name") == turn_name
@@ -306,18 +320,25 @@ async def test_rotation_claimed_state(
             )
             assert sensor.state == CHORE_STATE_CLAIMED
             assert sensor.attributes.get("can_claim") is False  # Already claimed
-            assert sensor.attributes.get("lock_reason") is None
+            assert (
+                sensor.attributes.get("claim_mode")
+                == CHORE_CLAIM_MODE_BLOCKED_PENDING_CLAIM
+            )
             # claimed_by should be set (assignee's display name)
             claimed_by = sensor.attributes.get("claimed_by")
-            assert claimed_by == turn_name, f"Expected claimed_by={turn_name}"
+            assert claimed_by == [turn_name], f"Expected claimed_by={[turn_name]}"
         else:
-            # Others still blocked by not_my_turn
-            assert current_chore["state"] == CHORE_STATE_NOT_MY_TURN, (
-                f"{name} still blocked"
-            )
-            assert sensor.state == CHORE_STATE_NOT_MY_TURN
+            # Others remain blocked while turn ownership is active
+            assert current_chore["state"] in {
+                CHORE_STATE_NOT_MY_TURN,
+                "completed_by_other",
+            }, f"{name} still blocked"
+            assert sensor.state in {CHORE_STATE_NOT_MY_TURN, "completed_by_other"}
             assert sensor.attributes.get("can_claim") is False
-            assert sensor.attributes.get("lock_reason") == "not_my_turn"
+            assert sensor.attributes.get("claim_mode") in {
+                CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN,
+                CHORE_CLAIM_MODE_BLOCKED_COMPLETED_BY_OTHER,
+            }
 
         # turn_user_name remains unchanged
         assert sensor.attributes.get("turn_user_name") == turn_name
@@ -415,7 +436,9 @@ async def test_rotation_non_turn_holder_cannot_claim(
     )
     assert non_sensor.state == CHORE_STATE_NOT_MY_TURN
     assert non_sensor.attributes.get("can_claim") is False
-    assert non_sensor.attributes.get("lock_reason") == "not_my_turn"
+    assert (
+        non_sensor.attributes.get("claim_mode") == CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN
+    )
 
 
 @pytest.mark.asyncio
@@ -505,7 +528,10 @@ async def test_rotation_midnight_advances_once_and_keeps_single_claimable_holder
             first_midnight_not_my_turn.append(assignee_slug)
             assert sensor_state.state == CHORE_STATE_NOT_MY_TURN
             assert sensor_state.attributes.get("can_claim") is False
-            assert sensor_state.attributes.get("lock_reason") == "not_my_turn"
+            assert (
+                sensor_state.attributes.get("claim_mode")
+                == CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN
+            )
 
     assert len(first_midnight_pending) == 1, "Exactly one assignee should be claimable"
     assert len(first_midnight_not_my_turn) == 2

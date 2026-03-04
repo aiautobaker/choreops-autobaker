@@ -1863,6 +1863,29 @@ CHORE_UI_GLOBAL_STATES: Final[frozenset[str]] = frozenset(
     }
 )
 
+# Canonical claim interaction modes (hard-fork contract)
+CHORE_CLAIM_MODE_CLAIMABLE: Final = "claimable"
+CHORE_CLAIM_MODE_STEAL_AVAILABLE: Final = "steal_available"
+CHORE_CLAIM_MODE_BLOCKED_COMPLETED_BY_OTHER: Final = "blocked_completed_by_other"
+CHORE_CLAIM_MODE_BLOCKED_ALREADY_APPROVED: Final = "blocked_already_approved"
+CHORE_CLAIM_MODE_BLOCKED_PENDING_CLAIM: Final = "blocked_pending_claim"
+CHORE_CLAIM_MODE_BLOCKED_WAITING_WINDOW: Final = "blocked_waiting_window"
+CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN: Final = "blocked_not_my_turn"
+CHORE_CLAIM_MODE_BLOCKED_MISSED_LOCKED: Final = "blocked_missed_locked"
+
+CHORE_CLAIM_MODES: Final[frozenset[str]] = frozenset(
+    {
+        CHORE_CLAIM_MODE_CLAIMABLE,
+        CHORE_CLAIM_MODE_STEAL_AVAILABLE,
+        CHORE_CLAIM_MODE_BLOCKED_COMPLETED_BY_OTHER,
+        CHORE_CLAIM_MODE_BLOCKED_ALREADY_APPROVED,
+        CHORE_CLAIM_MODE_BLOCKED_PENDING_CLAIM,
+        CHORE_CLAIM_MODE_BLOCKED_WAITING_WINDOW,
+        CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN,
+        CHORE_CLAIM_MODE_BLOCKED_MISSED_LOCKED,
+    }
+)
+
 # Chore status context keys (get_chore_status_context return contract)
 CHORE_CTX_STATE: Final = "state"
 CHORE_CTX_STORED_STATE: Final = "stored_state"
@@ -1873,7 +1896,7 @@ CHORE_CTX_IS_APPROVED_IN_PERIOD: Final = "is_approved_in_period"
 CHORE_CTX_IS_COMPLETED_BY_OTHER: Final = "is_completed_by_other"
 CHORE_CTX_CAN_CLAIM: Final = "can_claim"
 CHORE_CTX_CAN_CLAIM_ERROR: Final = "can_claim_error"
-CHORE_CTX_LOCK_REASON: Final = "lock_reason"
+CHORE_CTX_CLAIM_MODE: Final = "claim_mode"
 CHORE_CTX_CAN_APPROVE: Final = "can_approve"
 CHORE_CTX_CAN_APPROVE_ERROR: Final = "can_approve_error"
 CHORE_CTX_DUE_DATE: Final = "due_date"
@@ -1891,7 +1914,7 @@ CHORE_STATUS_CONTEXT_KEYS: Final[frozenset[str]] = frozenset(
         CHORE_CTX_IS_COMPLETED_BY_OTHER,
         CHORE_CTX_CAN_CLAIM,
         CHORE_CTX_CAN_CLAIM_ERROR,
-        CHORE_CTX_LOCK_REASON,
+        CHORE_CTX_CLAIM_MODE,
         CHORE_CTX_CAN_APPROVE,
         CHORE_CTX_CAN_APPROVE_ERROR,
         CHORE_CTX_DUE_DATE,
@@ -2270,8 +2293,10 @@ TRANS_KEY_ATTR_LANGUAGE: Final = "language"
 ATTR_ACHIEVEMENT_NAME: Final = "achievement_name"
 ATTR_ALL_EARNED_BADGES: Final = "all_earned_badges"
 ATTR_APPROVAL_RESET_TYPE: Final = "approval_reset_type"
+ATTR_APPROVAL_RESET_PENDING_CLAIM_ACTION: Final = "approval_reset_pending_claim_action"
 ATTR_APPROVAL_PERIOD_START: Final = "approval_period_start"
 ATTR_APPLICABLE_DAYS: Final = "applicable_days"
+ATTR_AUTO_APPROVE: Final = "auto_approve"
 ATTR_AWARDED: Final = "awarded"
 ATTR_BADGE_AWARDS: Final = "awards"
 ATTR_BONUS_BUTTON_EID: Final = "bonus_button_eid"
@@ -2380,6 +2405,8 @@ PURPOSE_BUTTON_BONUS_APPLY: Final = "Approver applies bonus (adds points)"
 
 # PURPOSE values for select attributes (select.py)
 ATTR_DUE_DATE: Final = "due_date"
+ATTR_CHORE_DUE_WINDOW_OFFSET: Final = "chore_due_window_offset"
+ATTR_CHORE_CLAIM_LOCK_UNTIL_WINDOW: Final = "chore_claim_lock_until_window"
 ATTR_DUE_WINDOW_START: Final = "due_window_start"
 ATTR_END_DATE: Final = "end_date"
 ATTR_GLOBAL_STATE: Final = "global_state"
@@ -2410,6 +2437,7 @@ ATTR_POINTS_MULTIPLIER: Final = "points_multiplier"
 ATTR_POINTS_TO_NEXT_BADGE: Final = "points_to_next_badge"
 ATTR_RAW_PROGRESS: Final = "raw_progress"
 ATTR_RECURRING_FREQUENCY: Final = "recurring_frequency"
+ATTR_OVERDUE_HANDLING_TYPE: Final = "overdue_handling_type"
 ATTR_REQUIRED_CHORES: Final = "required_chores"
 ATTR_RESET_SCHEDULE: Final = "reset_schedule"
 ATTR_REWARD_APPROVALS_COUNT: Final = "reward_approvals_count"
@@ -2467,7 +2495,7 @@ ATTR_CHORE_LABELS: Final = "labels"
 ATTR_CHORE_PRIMARY_GROUP: Final = "primary_group"
 
 # Rotation and availability dashboard attributes
-ATTR_CHORE_LOCK_REASON: Final = "lock_reason"
+ATTR_CHORE_CLAIM_MODE: Final = "claim_mode"
 ATTR_CHORE_TURN_USER_NAME: Final = "turn_user_name"
 ATTR_CHORE_AVAILABLE_AT: Final = "available_at"
 
@@ -3024,6 +3052,11 @@ TRANS_KEY_ERROR_CHORE_MISSED_LOCKED: Final = (
     "chore_missed_locked"  # Chore was missed and is now locked
 )
 TRANS_KEY_ERROR_CHORE_COMPLETED_BY_OTHER: Final = "chore_completed_by_other"  # SHARED_FIRST chore already completed by another assignee
+
+# Claim mode labels
+# Existing blocked claim-mode semantics reuse TRANS_KEY_ERROR_CHORE_* keys above.
+TRANS_KEY_CLAIM_MODE_STEAL_AVAILABLE: Final = "claim_mode_steal_available"
+
 TRANS_KEY_ERROR_CHORE_NOT_FOUND: Final = (
     "chore_not_found"  # Chore with ID '{chore_id}' not found
 )

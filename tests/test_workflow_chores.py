@@ -33,7 +33,6 @@ from tests.helpers import (
     CHORE_STATE_CLAIMED,
     CHORE_STATE_CLAIMED_IN_PART,
     CHORE_STATE_COMPLETED,
-    CHORE_STATE_MISSED,
     CHORE_STATE_NOT_MY_TURN,
     CHORE_STATE_OVERDUE,
     CHORE_STATE_PENDING,
@@ -297,8 +296,9 @@ class TestIndependentChores:
         )
 
         # State should be reset to pending
-        state = get_chore_state_from_sensor(hass, "zoe", "Make bed")
-        assert state == CHORE_STATE_PENDING
+        assert (
+            get_chore_state_from_sensor(hass, "zoe", "Make bed") == CHORE_STATE_PENDING
+        )
 
     @pytest.mark.asyncio
     async def test_disapprove_does_not_grant_points(
@@ -354,7 +354,10 @@ class TestIndependentChores:
         )
         attrs = get_chore_attributes_from_sensor(hass, "zoe", chore_name)
         assert attrs.get(const.ATTR_CAN_CLAIM) is False
-        assert attrs.get(const.ATTR_CHORE_LOCK_REASON) == const.CHORE_STATE_WAITING
+        assert (
+            attrs.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_BLOCKED_WAITING_WINDOW
+        )
 
     @pytest.mark.asyncio
     async def test_pre_window_without_claim_lock_stays_pending_and_claimable(
@@ -384,7 +387,9 @@ class TestIndependentChores:
         )
         attrs = get_chore_attributes_from_sensor(hass, "zoe", chore_name)
         assert attrs.get(const.ATTR_CAN_CLAIM) is True
-        assert attrs.get(const.ATTR_CHORE_LOCK_REASON) is None
+        assert (
+            attrs.get(const.ATTR_CHORE_CLAIM_MODE) == const.CHORE_CLAIM_MODE_CLAIMABLE
+        )
 
 
 # =============================================================================
@@ -546,7 +551,10 @@ class TestSharedFirstChores:
         max_attrs_before = get_chore_attributes_from_sensor(hass, "max", chore_name)
         assert max_attrs_before.get(const.ATTR_CAN_CLAIM) is False
         assert max_attrs_before.get(const.ATTR_GLOBAL_STATE) == CHORE_STATE_CLAIMED
-        assert max_attrs_before.get(const.ATTR_CHORE_LOCK_REASON) is None
+        assert (
+            max_attrs_before.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_BLOCKED_COMPLETED_BY_OTHER
+        )
 
         # Force chore past due date WITHOUT resetting state/ownership.
         # Do not use set_due_date() here because that API intentionally resets
@@ -687,6 +695,13 @@ class TestSharedFirstChores:
             get_chore_state_from_sensor(hass, "max", "Organize garage")
             == CHORE_STATE_PENDING
         )
+
+        zoe_attrs = get_chore_attributes_from_sensor(hass, "zoe", "Organize garage")
+        max_attrs = get_chore_attributes_from_sensor(hass, "max", "Organize garage")
+        assert zoe_attrs.get("claimed_by") in (None, [])
+        assert zoe_attrs.get("completed_by") in (None, [])
+        assert max_attrs.get("claimed_by") in (None, [])
+        assert max_attrs.get("completed_by") in (None, [])
 
     @pytest.mark.asyncio
     async def test_secondary_assignee_stays_completed_by_other_in_due_window(
@@ -951,12 +966,13 @@ class TestSharedAllChores:
         await coordinator.chore_manager._on_periodic_update(now_utc=dt_now_utc())
         await hass.async_block_till_done()
 
-        assert (
-            get_chore_state_from_sensor(hass, "max", chore_name) == CHORE_STATE_MISSED
-        )
+        assert get_chore_state_from_sensor(hass, "max", chore_name) == "missed"
         max_attrs = get_chore_attributes_from_sensor(hass, "max", chore_name)
         assert max_attrs.get(const.ATTR_CAN_CLAIM) is False
-        assert max_attrs.get(const.ATTR_CHORE_LOCK_REASON) == CHORE_STATE_MISSED
+        assert (
+            max_attrs.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_BLOCKED_MISSED_LOCKED
+        )
 
     @pytest.mark.asyncio
     async def test_each_assignee_gets_points_on_approval(
@@ -1020,6 +1036,37 @@ class TestSharedAllChores:
         await approve_chore(hass, "lila", "Family dinner cleanup", approver_context)
         assert get_points_from_sensor(hass, "lila") == initial_lila + 10.0
 
+        expected_completed_by = {"Zoë", "Max!", "Lila"}
+        expected_claimed_by = {"Zoë", "Max!", "Lila"}
+
+        # Regression: final completer/claimer must still see all owners, not only self
+        for slug in ("zoe", "max", "lila"):
+            attrs = get_chore_attributes_from_sensor(
+                hass, slug, "Family dinner cleanup"
+            )
+            completed_by = attrs.get("completed_by")
+            if isinstance(completed_by, list):
+                completed_list = completed_by
+            elif isinstance(completed_by, str):
+                completed_list = [
+                    name.strip() for name in completed_by.split(",") if name.strip()
+                ]
+            else:
+                completed_list = []
+
+            claimed_by = attrs.get("claimed_by")
+            if isinstance(claimed_by, list):
+                claimed_list = claimed_by
+            elif isinstance(claimed_by, str):
+                claimed_list = [
+                    name.strip() for name in claimed_by.split(",") if name.strip()
+                ]
+            else:
+                claimed_list = []
+
+            assert set(completed_list) == expected_completed_by
+            assert set(claimed_list) == expected_claimed_by
+
     @pytest.mark.asyncio
     async def test_approved_state_tracked_per_assignee(
         self,
@@ -1080,7 +1127,10 @@ class TestSharedAllChores:
         )
         max_attrs = get_chore_attributes_from_sensor(hass, "max", chore_name)
         assert max_attrs.get(const.ATTR_CAN_CLAIM) is False
-        assert max_attrs.get(const.ATTR_CHORE_LOCK_REASON) == const.CHORE_STATE_WAITING
+        assert (
+            max_attrs.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_BLOCKED_WAITING_WINDOW
+        )
 
     @pytest.mark.asyncio
     async def test_secondary_assignee_pending_pre_window_when_claim_lock_disabled_shared_all(
@@ -1115,7 +1165,10 @@ class TestSharedAllChores:
         )
         max_attrs = get_chore_attributes_from_sensor(hass, "max", chore_name)
         assert max_attrs.get(const.ATTR_CAN_CLAIM) is True
-        assert max_attrs.get(const.ATTR_CHORE_LOCK_REASON) is None
+        assert (
+            max_attrs.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_CLAIMABLE
+        )
 
 
 class TestRotationSimpleChores:
@@ -1156,7 +1209,10 @@ class TestRotationSimpleChores:
 
         attrs_before = get_chore_attributes_from_sensor(hass, non_turn_slug, chore_name)
         assert attrs_before.get(const.ATTR_CAN_CLAIM) is False
-        assert attrs_before.get(const.ATTR_CHORE_LOCK_REASON) == CHORE_STATE_NOT_MY_TURN
+        assert (
+            attrs_before.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN
+        )
 
         # Force due date into the past and run scheduler periodic update.
         # Rotation lock should still take precedence for non-turn assignee.
@@ -1173,7 +1229,10 @@ class TestRotationSimpleChores:
         )
         attrs_after = get_chore_attributes_from_sensor(hass, non_turn_slug, chore_name)
         assert attrs_after.get(const.ATTR_CAN_CLAIM) is False
-        assert attrs_after.get(const.ATTR_CHORE_LOCK_REASON) == CHORE_STATE_NOT_MY_TURN
+        assert (
+            attrs_after.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN
+        )
 
     @pytest.mark.asyncio
     async def test_non_turn_assignee_stays_not_my_turn_before_due_when_allow_steal_enabled(
@@ -1213,7 +1272,10 @@ class TestRotationSimpleChores:
         assert non_turn_slug, "Expected one non-turn assignee before steal window opens"
         attrs = get_chore_attributes_from_sensor(hass, non_turn_slug, chore_name)
         assert attrs.get(const.ATTR_CAN_CLAIM) is False
-        assert attrs.get(const.ATTR_CHORE_LOCK_REASON) == CHORE_STATE_NOT_MY_TURN
+        assert (
+            attrs.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN
+        )
 
     @pytest.mark.asyncio
     async def test_non_turn_assignee_transitions_to_overdue_when_allow_steal_enabled_and_past_due(
@@ -1264,7 +1326,10 @@ class TestRotationSimpleChores:
         )
         attrs_after = get_chore_attributes_from_sensor(hass, non_turn_slug, chore_name)
         assert attrs_after.get(const.ATTR_CAN_CLAIM) is True
-        assert attrs_after.get(const.ATTR_CHORE_LOCK_REASON) is None
+        assert (
+            attrs_after.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_STEAL_AVAILABLE
+        )
 
 
 class TestRotationSmartChores:
@@ -1305,7 +1370,10 @@ class TestRotationSmartChores:
 
         attrs_before = get_chore_attributes_from_sensor(hass, non_turn_slug, chore_name)
         assert attrs_before.get(const.ATTR_CAN_CLAIM) is False
-        assert attrs_before.get(const.ATTR_CHORE_LOCK_REASON) == CHORE_STATE_NOT_MY_TURN
+        assert (
+            attrs_before.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN
+        )
 
         # Force due date into the past and run scheduler periodic update.
         # Rotation lock should still take precedence for non-turn assignee.
@@ -1322,7 +1390,10 @@ class TestRotationSmartChores:
         )
         attrs_after = get_chore_attributes_from_sensor(hass, non_turn_slug, chore_name)
         assert attrs_after.get(const.ATTR_CAN_CLAIM) is False
-        assert attrs_after.get(const.ATTR_CHORE_LOCK_REASON) == CHORE_STATE_NOT_MY_TURN
+        assert (
+            attrs_after.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN
+        )
 
     @pytest.mark.asyncio
     async def test_non_turn_assignee_transitions_to_overdue_when_allow_steal_and_past_due(
@@ -1363,7 +1434,10 @@ class TestRotationSmartChores:
 
         attrs_before = get_chore_attributes_from_sensor(hass, non_turn_slug, chore_name)
         assert attrs_before.get(const.ATTR_CAN_CLAIM) is False
-        assert attrs_before.get(const.ATTR_CHORE_LOCK_REASON) == CHORE_STATE_NOT_MY_TURN
+        assert (
+            attrs_before.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN
+        )
 
         # Open steal window by passing due date
         chore_info[const.DATA_CHORE_DUE_DATE] = (
@@ -1378,7 +1452,10 @@ class TestRotationSmartChores:
         )
         attrs_after = get_chore_attributes_from_sensor(hass, non_turn_slug, chore_name)
         assert attrs_after.get(const.ATTR_CAN_CLAIM) is True
-        assert attrs_after.get(const.ATTR_CHORE_LOCK_REASON) is None
+        assert (
+            attrs_after.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_STEAL_AVAILABLE
+        )
 
     @pytest.mark.asyncio
     async def test_rotation_override_bypasses_not_my_turn_for_non_turn_assignee(
@@ -1480,7 +1557,10 @@ class TestRotationSmartChores:
         )
         attrs = get_chore_attributes_from_sensor(hass, non_turn_slug, chore_name)
         assert attrs.get(const.ATTR_CAN_CLAIM) is False
-        assert attrs.get(const.ATTR_CHORE_LOCK_REASON) == CHORE_STATE_NOT_MY_TURN
+        assert (
+            attrs.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN
+        )
 
 
 # =============================================================================
@@ -2017,6 +2097,9 @@ class TestWorkflowIntegrationEdgeCases:
         assert (
             get_chore_state_from_sensor(hass, "zoe", "Make bed") == CHORE_STATE_PENDING
         )
+        attrs_after_undo = get_chore_attributes_from_sensor(hass, "zoe", "Make bed")
+        assert attrs_after_undo.get("claimed_by") in (None, [])
+        assert attrs_after_undo.get("completed_by") in (None, [])
         assert get_points_from_sensor(hass, "zoe") == initial_points
 
         reclaim_result = await claim_chore(hass, "zoe", "Make bed", assignee_context)
@@ -2670,9 +2753,15 @@ class TestEnhancedFrequencyWorkflows:
         zoe_attrs = get_chore_attributes_from_sensor(hass, "zoe", chore_name)
         max_attrs = get_chore_attributes_from_sensor(hass, "max", chore_name)
         assert zoe_attrs.get(const.ATTR_CAN_CLAIM) is True
-        assert zoe_attrs.get(const.ATTR_CHORE_LOCK_REASON) is None
+        assert (
+            zoe_attrs.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_CLAIMABLE
+        )
         assert max_attrs.get(const.ATTR_CAN_CLAIM) is False
-        assert max_attrs.get(const.ATTR_CHORE_LOCK_REASON) == const.CHORE_STATE_WAITING
+        assert (
+            max_attrs.get(const.ATTR_CHORE_CLAIM_MODE)
+            == const.CHORE_CLAIM_MODE_BLOCKED_WAITING_WINDOW
+        )
 
         zoe_dashboard = get_dashboard_helper(hass, "zoe")
         max_dashboard = get_dashboard_helper(hass, "max")

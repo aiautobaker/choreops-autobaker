@@ -155,6 +155,8 @@ vol.Required(const.CFOF_USERS_INPUT_NAME, default=name): str
 #### Specialized Logic Patterns
 
 - **`CHORE_STATE_*`**: Lifecycle states for chores (e.g., `CHORE_STATE_CLAIMED`, `CHORE_STATE_OVERDUE`).
+- **`CHORE_CLAIM_MODE_*`**: Interaction taxonomy for claim gating and UX reason display
+  (e.g., `CHORE_CLAIM_MODE_CLAIMABLE`, `CHORE_CLAIM_MODE_BLOCKED_NOT_MY_TURN`).
 - **`BADGE_*`**: Constants for badge logic, including `BADGE_TYPE_*`, `BADGE_STATE_*`, and `BADGE_RESET_SCHEDULE_*`.
 - **`FREQUENCY_*`**: Recurrence options (e.g., `FREQUENCY_DAILY`, `FREQUENCY_CUSTOM`).
 - **`PERIOD_*`**: Time period definitions (e.g., `PERIOD_DAY_END`, `PERIOD_ALL_TIME`).

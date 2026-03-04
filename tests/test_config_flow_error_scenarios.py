@@ -40,7 +40,7 @@ def mock_storage_dir(tmp_path: Path) -> Path:
 @pytest.fixture
 def storage_file(mock_storage_dir: Path) -> Path:
     """Path to the choreops_data storage file."""
-    return mock_storage_dir / "choreops_data"
+    return mock_storage_dir / const.STORAGE_DIRECTORY / const.STORAGE_KEY
 
 
 async def test_corrupt_json_validation(

@@ -3128,6 +3128,43 @@
               "manual": "Manual Reset Only"
             }
           },
+          "approval_reset_pending_claim_action": {
+            "name": "Approval Reset Pending Claim Action",
+            "state": {
+              "hold_pending": "Hold Claim Status (Await Approval/Rejection)",
+              "clear_pending": "Clear Pending Claims",
+              "auto_approve_pending": "Auto-Approve Pending Claims"
+            }
+          },
+          "overdue_handling_type": {
+            "name": "Overdue Handling Type",
+            "state": {
+              "never_overdue": "Never Overdue",
+              "at_due_date": "Overdue Until Complete",
+              "at_due_date_clear_at_approval_reset": "Overdue Until Approval Reset",
+              "at_due_date_clear_immediate_on_late": "Overdue Until Complete (Clear Late Approvals Immediately)",
+              "at_due_date_clear_and_mark_missed": "Overdue Until Approval Reset (Mark as Missed)",
+              "at_due_date_mark_missed_and_lock": "Lock Until Approval Reset (Prevent claims, mark missed)",
+              "at_due_date_allow_steal": "Allow Steal Until Approval Reset (Rotation Only)"
+            }
+          },
+          "chore_claim_lock_until_window": {
+            "name": "Lock Claim Until Due Window Opens",
+            "state": {
+              "true": "Yes",
+              "false": "No"
+            }
+          },
+          "chore_due_window_offset": {
+            "name": "Due Window Offset"
+          },
+          "auto_approve": {
+            "name": "Auto-Approve Claims",
+            "state": {
+              "true": "Yes",
+              "false": "No"
+            }
+          },
           "recurring_frequency": {
             "name": "Recurring Frequency",
             "state": {
@@ -3277,12 +3314,17 @@
           "time_until_overdue": {
             "name": "Time Until Overdue"
           },
-          "lock_reason": {
-            "name": "Lock Reason",
+          "claim_mode": {
+            "name": "Claim mode",
             "state": {
-              "waiting": "Waiting for due window",
-              "not_my_turn": "Not your turn",
-              "missed": "Missed"
+              "claimable": "Claimable",
+              "steal_available": "Steal available",
+              "blocked_completed_by_other": "Completed by other",
+              "blocked_already_approved": "Already approved",
+              "blocked_pending_claim": "Pending claim",
+              "blocked_waiting_window": "Waiting for due window",
+              "blocked_not_my_turn": "Not your turn",
+              "blocked_missed_locked": "Missed and locked"
             }
           },
           "turn_user_name": {

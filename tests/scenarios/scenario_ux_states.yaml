@@ -14,6 +14,8 @@
 #   OVD  = overdue handling behavior
 #   DUE  = due date window behavior
 #   WAIT = waiting lock behavior
+#   MISS = strict missed-lock behavior (set to now+1m for test readiness)
+#   ZOE  = explicit Zoë state-matrix coverage
 # =============================================================================
 
 system:
@@ -92,6 +94,28 @@ chores:
     completion_criteria: "independent"
     recurring_frequency: "daily"
 
+  - name: "UX-ZOE-PEND-001 | Pending Later Today"
+    assigned_to: ["Zoë"]
+    points: 8
+    icon: "mdi:calendar-clock"
+    completion_criteria: "independent"
+    recurring_frequency: "none"
+    approval_reset_type: "at_midnight_once"
+    overdue_handling_type: "at_due_date"
+    approval_reset_pending_claim_action: "clear_pending"
+    due_date: "now+10h"
+
+  - name: "UX-ZOE-PEND-002 | Pending Next Week"
+    assigned_to: ["Zoë"]
+    points: 8
+    icon: "mdi:calendar-week"
+    completion_criteria: "independent"
+    recurring_frequency: "none"
+    approval_reset_type: "at_midnight_once"
+    overdue_handling_type: "at_due_date"
+    approval_reset_pending_claim_action: "clear_pending"
+    due_date: "now+7d"
+
   - name: "UX-OVD-001 | Overdue At Due Date"
     assigned_to: ["Zoë"]
     points: 15
@@ -101,7 +125,7 @@ chores:
     approval_reset_type: "at_midnight_once"
     overdue_handling_type: "at_due_date"
     approval_reset_pending_claim_action: "clear_pending"
-    due_date: "now+2m"
+    due_date: "now+1m"
 
   - name: "UX-OVD-FAST-001 | Overdue In ~1 Minute"
     assigned_to: ["Max!"]
@@ -139,6 +163,71 @@ chores:
     chore_due_window_offset: "1h"
     chore_claim_lock_until_window: true
     due_date: "now+20m"
+
+  - name: "UX-DUE-003 | Due Window Open (Zoë)"
+    assigned_to: ["Zoë"]
+    points: 16
+    icon: "mdi:clock-fast"
+    completion_criteria: "independent"
+    recurring_frequency: "none"
+    approval_reset_type: "at_midnight_once"
+    overdue_handling_type: "at_due_date"
+    approval_reset_pending_claim_action: "clear_pending"
+    chore_due_window_offset: "1h"
+    chore_claim_lock_until_window: true
+    due_date: "now+20m"
+
+  - name: "UX-WAIT-002 | Waiting Due Window Locked (Zoë)"
+    assigned_to: ["Zoë"]
+    points: 14
+    icon: "mdi:clock-outline"
+    completion_criteria: "independent"
+    recurring_frequency: "none"
+    approval_reset_type: "at_midnight_once"
+    overdue_handling_type: "at_due_date"
+    approval_reset_pending_claim_action: "clear_pending"
+    chore_due_window_offset: "1h"
+    chore_claim_lock_until_window: true
+    due_date: "now+6h"
+
+  - name: "UX-MISS-001 | Missed (Strict Lock)"
+    assigned_to: ["Zoë"]
+    points: 15
+    icon: "mdi:calendar-remove"
+    completion_criteria: "independent"
+    recurring_frequency: "none"
+    approval_reset_type: "at_midnight_once"
+    overdue_handling_type: "at_due_date_mark_missed_and_lock"
+    approval_reset_pending_claim_action: "clear_pending"
+    due_date: "now+1m"
+
+  - name: "UX-ZOE-CLAIM-001 | Claimed In Progress"
+    assigned_to: ["Zoë"]
+    points: 11
+    icon: "mdi:progress-check"
+    completion_criteria: "independent"
+    recurring_frequency: "daily"
+
+  - name: "UX-ZOE-COMP-001 | Completed Approved"
+    assigned_to: ["Zoë"]
+    points: 12
+    icon: "mdi:check-decagram"
+    completion_criteria: "independent"
+    recurring_frequency: "daily"
+
+  - name: "UX-ZOE-CBO-001 | Completed By Other (Shared First)"
+    assigned_to: ["Zoë", "Max!", "Lila"]
+    points: 9
+    icon: "mdi:account-check-outline"
+    completion_criteria: "shared_first"
+    recurring_frequency: "daily"
+
+  - name: "UX-ZOE-NTM-001 | Not My Turn (Rotation)"
+    assigned_to: ["Max!", "Lila", "Zoë"]
+    points: 10
+    icon: "mdi:account-lock-outline"
+    completion_criteria: "rotation_simple"
+    recurring_frequency: "daily"
 
   - name: "UX-DUE-002 | Due Next Week"
     assigned_to: ["Lila"]
@@ -206,6 +295,27 @@ state_seed_actions:
       approver_name: "Dad Leo"
       user_name: "Zoë"
       chore_name: "UX-SA-002 | Shared All Partial Approval"
+
+  - service: "claim_chore"
+    data:
+      user_name: "Zoë"
+      chore_name: "UX-ZOE-CLAIM-001 | Claimed In Progress"
+
+  - service: "claim_chore"
+    data:
+      user_name: "Zoë"
+      chore_name: "UX-ZOE-COMP-001 | Completed Approved"
+
+  - service: "approve_chore"
+    data:
+      approver_name: "Dad Leo"
+      user_name: "Zoë"
+      chore_name: "UX-ZOE-COMP-001 | Completed Approved"
+
+  - service: "claim_chore"
+    data:
+      user_name: "Max!"
+      chore_name: "UX-ZOE-CBO-001 | Completed By Other (Shared First)"
 
   - service: "manual_adjust_points"
     data:

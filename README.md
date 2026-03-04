@@ -28,17 +28,17 @@ Born from the popular _KidsChores_ integration, ChoreOps evolves that foundation
 
 **Whether you need a full XP/Reward economy for the kids, or a silent "Operations Center" for housemates, ChoreOps adapts to you.**
 
-#### 🎮 The Gamified Home
+#### **🎮 The Gamified Home**
 
-Lean into the native **XP, Badges, Achievements, and Streaks**. Turn household participation into an engaging loop that motivates everyone to chase high scores and earn rewards.
+- Lean into the native **XP, Badges, Achievements, and Streaks**. Turn household participation into an engaging loop that motivates everyone to chase high scores and earn rewards.
 
-#### ⚙️ The Utility Home
+#### **⚙️ The Utility Home**
 
-Strip away the game layer entirely. Use the **Enterprise-Grade Scheduling** and **Rotation Logic** to automate the mental load of household maintenance. Get actionable notifications for the trash, filters, and bills—without a single point or badge involved.
+- Strip away the game layer entirely. Use the **Advanced Scheduling** and **Rotation Logic** to automate the mental load of household maintenance. Get actionable notifications for the trash, filters, and bills—without a single point or badge involved.
 
-#### ⚖️ The Hybrid Home
+#### **⚖️ The Hybrid Home**
 
-**The best of both worlds.** Configure some profiles with full gamification to drive engagement, while keeping other profiles strictly utilitarian.
+- **The best of both worlds.** Configure some profiles with full gamification to drive engagement, while keeping other profiles strictly utilitarian.<br><br>
 
 ---
 

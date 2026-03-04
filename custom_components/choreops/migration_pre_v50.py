@@ -6106,7 +6106,10 @@ class PreV50Migrator:
             all_time_bucket[const.DATA_USER_POINT_PERIOD_POINTS_SPENT] = (
                 calculated_spent
             )
-            if isinstance(legacy_by_source_all_time, dict) and legacy_by_source_all_time:
+            if (
+                isinstance(legacy_by_source_all_time, dict)
+                and legacy_by_source_all_time
+            ):
                 all_time_bucket[const.DATA_USER_POINT_PERIOD_BY_SOURCE] = dict(
                     legacy_by_source_all_time
                 )

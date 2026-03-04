@@ -609,6 +609,23 @@ Ensure output has required keys:
 
 ## v0.5.0 Chore Attributes Reference
 
+### State/status source-of-truth precedence (required)
+
+Use backend-provided attributes as the canonical source whenever available.
+
+1. Prefer `state_attr(chore.eid, 'global_state')` for shared/global status display
+   (`completed_in_part`, `claimed_in_part`, etc.).
+2. Use chore `state` as fallback when `global_state` is unavailable.
+3. Use blocker attributes (`can_claim`, `block_reason`) for claim-action gating and
+   blocked-state messaging.
+4. Derive values only when no canonical attribute exists (for example, shared-all
+   progress ratio from `assigned_user_names` + `completed_by`).
+
+Authoring rule:
+
+- Do not override canonical backend state with frontend heuristics when a matching
+  attribute is already provided by the sensor/helper payload.
+
 ### Dashboard helper chore fields
 
 The dashboard helper resolved via `dashboard_lookup_key = <integration.entry_id>:<user.user_id>` provides enriched chore data with these attributes:
@@ -623,6 +640,18 @@ The dashboard helper resolved via `dashboard_lookup_key = <integration.entry_id>
 | `labels`   | list   | Categorization tags                    | `["kitchen", "daily"]`    |
 | `grouping` | string | UI grouping hint                       | `"morning"`, `"evening"`  |
 | `is_am_pm` | bool   | Whether chore uses 12-hour time format | `true`, `false`           |
+
+#### Canonical chore sensor attributes used by templates
+
+When rendering row state/status for a chore card, prefer sensor attributes sourced
+from `chore.eid`:
+
+| Field          | Type         | Use for                                               |
+| -------------- | ------------ | ----------------------------------------------------- |
+| `global_state` | string\|null | Canonical global/shared status (`*_in_part` included) |
+| `can_claim`    | bool         | Claim action enable/disable                           |
+| `block_reason` | string\|null | Canonical blocker reason label/icon selection         |
+| `state`        | string       | Fallback status when `global_state` is unavailable    |
 
 #### New v0.5.0 rotation and restriction fields
 

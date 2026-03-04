@@ -483,6 +483,14 @@ Chore state contract is layered and explicit:
 
 Any new state must be inserted deliberately into this contract.
 
+Interaction lane contract (hard fork v1):
+
+- Display lane stays in `state` and `global_state` for visual lifecycle projection.
+- Interaction lane uses `claim_mode` as canonical reason taxonomy and `can_claim`
+  as the single action gate.
+- Canonical derivation rule: `can_claim = claim_mode in {claimable,
+  steal_available}`.
+
 | Priority | Engine workflow state | Assignee UI state (Option A) | Meaning / Effect                                             |
 | -------- | --------------------- | ---------------------------- | ------------------------------------------------------------ |
 | P1       | `approved`            | `completed`                  | Completed and approved in current period; highest precedence |
