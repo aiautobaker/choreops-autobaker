@@ -1252,7 +1252,7 @@ class ChoreEngine:
         )
         if turn_state is not None:
             if turn_state == const.CHORE_STATE_CLAIMED:
-                return const.CHORE_STATE_INDEPENDENT
+                return const.CHORE_STATE_CLAIMED
             return turn_state
 
         if count_approved > 0:

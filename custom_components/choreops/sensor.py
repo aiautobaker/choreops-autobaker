@@ -1113,13 +1113,16 @@ class AssigneeChoreStatusSensor(ChoreOpsCoordinatorEntity, SensorEntity):
             ),
             # --- 5. Ownership tracking ---
             # INDEPENDENT: assignee's own name
-            # SHARED_FIRST: winner's name (stored in other assignees' data)
-            # SHARED_ALL: list of assignee names
+            # SHARED/ROTATION: chore-level ownership authority
             const.ATTR_CLAIMED_BY: self._normalize_name_list(
                 assignee_chore_data.get(const.DATA_CHORE_CLAIMED_BY)
+                if completion_criteria == const.COMPLETION_CRITERIA_INDEPENDENT
+                else chore_info.get(const.DATA_CHORE_CLAIMED_BY)
             ),
             const.ATTR_COMPLETED_BY: self._normalize_name_list(
                 assignee_chore_data.get(const.DATA_CHORE_COMPLETED_BY)
+                if completion_criteria == const.COMPLETION_CRITERIA_INDEPENDENT
+                else chore_info.get(const.DATA_CHORE_COMPLETED_BY)
             ),
             # --- 6. Timestamps (last_* events) ---
             const.ATTR_LAST_CLAIMED: last_claimed,
@@ -2505,30 +2508,39 @@ class SystemChoreSharedStateSensor(ChoreOpsCoordinatorEntity, SensorEntity):
             const.DATA_CHORE_COMPLETION_CRITERIA, const.COMPLETION_CRITERIA_INDEPENDENT
         )
         if completion_criteria == const.COMPLETION_CRITERIA_SHARED_FIRST:
-            # Get claimed_by and completed_by, resolve IDs to names
-            claimed_by_id = chore_info.get(const.DATA_CHORE_CLAIMED_BY)
-            completed_by_id = chore_info.get(const.DATA_CHORE_COMPLETED_BY)
+            # Ownership values are display names (string or list[str])
+            claimed_by_value = chore_info.get(const.DATA_CHORE_CLAIMED_BY)
+            completed_by_value = chore_info.get(const.DATA_CHORE_COMPLETED_BY)
 
-            claimed_by_name = None
-            if claimed_by_id:
-                claimant_info = cast(
-                    "AssigneeData",
-                    self.coordinator.assignees_data.get(claimed_by_id, {}),  # type: ignore[call-overload]
-                )
-                claimed_by_name = claimant_info.get(const.DATA_USER_NAME, claimed_by_id)
+            claimed_by_names = (
+                [
+                    value
+                    for value in claimed_by_value
+                    if isinstance(value, str) and value
+                ]
+                if isinstance(claimed_by_value, list)
+                else [claimed_by_value]
+                if isinstance(claimed_by_value, str) and claimed_by_value
+                else []
+            )
+            completed_by_names = (
+                [
+                    value
+                    for value in completed_by_value
+                    if isinstance(value, str) and value
+                ]
+                if isinstance(completed_by_value, list)
+                else [completed_by_value]
+                if isinstance(completed_by_value, str) and completed_by_value
+                else []
+            )
 
-            completed_by_name = None
-            if completed_by_id:
-                completer_info = cast(
-                    "AssigneeData",
-                    self.coordinator.assignees_data.get(completed_by_id, {}),  # type: ignore[call-overload]
-                )
-                completed_by_name = completer_info.get(
-                    const.DATA_USER_NAME, completed_by_id
-                )
-
-            attributes[const.ATTR_CHORE_CLAIMED_BY] = claimed_by_name
-            attributes[const.ATTR_CHORE_COMPLETED_BY] = completed_by_name
+            attributes[const.ATTR_CHORE_CLAIMED_BY] = (
+                claimed_by_names[0] if claimed_by_names else None
+            )
+            attributes[const.ATTR_CHORE_COMPLETED_BY] = (
+                completed_by_names[0] if completed_by_names else None
+            )
 
         if (
             chore_info.get(const.DATA_CHORE_RECURRING_FREQUENCY)

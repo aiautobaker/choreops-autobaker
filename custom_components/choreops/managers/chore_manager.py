@@ -672,9 +672,18 @@ class ChoreManager(BaseManager):
                     translation_key=normalized_error_key,
                 )
             if error_key == const.TRANS_KEY_ERROR_CHORE_COMPLETED_BY_OTHER:
-                claimed_by = assignee_chore_data.get(
-                    const.DATA_CHORE_CLAIMED_BY, "another assignee"
+                completion_criteria = chore_data.get(
+                    const.DATA_CHORE_COMPLETION_CRITERIA,
+                    const.COMPLETION_CRITERIA_INDEPENDENT,
                 )
+                if completion_criteria == const.COMPLETION_CRITERIA_INDEPENDENT:
+                    claimed_by = assignee_chore_data.get(
+                        const.DATA_CHORE_CLAIMED_BY, "another assignee"
+                    )
+                else:
+                    claimed_by = chore_data.get(
+                        const.DATA_CHORE_CLAIMED_BY, "another assignee"
+                    )
                 claimed_by_text = (
                     ", ".join(claimed_by)
                     if isinstance(claimed_by, list)
@@ -721,7 +730,14 @@ class ChoreManager(BaseManager):
             self._apply_effect(effect, chore_id)
 
         # Set last_claimed timestamp for the claiming assignee
-        assignee_chore_data[const.DATA_USER_CHORE_DATA_LAST_CLAIMED] = dt_now_utc_iso()
+        now_iso = dt_now_utc_iso()
+        assignee_chore_data[const.DATA_USER_CHORE_DATA_LAST_CLAIMED] = now_iso
+        completion_criteria = chore_data.get(
+            const.DATA_CHORE_COMPLETION_CRITERIA,
+            const.COMPLETION_CRITERIA_INDEPENDENT,
+        )
+        if completion_criteria != const.COMPLETION_CRITERIA_INDEPENDENT:
+            chore_data[const.DATA_CHORE_LAST_CLAIMED] = now_iso
         self._handle_claim_criteria(chore_id, assignee_id, assignee_name)
 
         # Update global chore state
@@ -910,6 +926,12 @@ class ChoreManager(BaseManager):
         # Set claim fields to match approval (combined claim+approve action)
         if not has_pending_claim:
             assignee_chore_data[const.DATA_USER_CHORE_DATA_LAST_CLAIMED] = now_iso
+            completion_criteria = chore_data.get(
+                const.DATA_CHORE_COMPLETION_CRITERIA,
+                const.COMPLETION_CRITERIA_INDEPENDENT,
+            )
+            if completion_criteria != const.COMPLETION_CRITERIA_INDEPENDENT:
+                chore_data[const.DATA_CHORE_LAST_CLAIMED] = now_iso
             self._handle_claim_criteria(chore_id, assignee_id, assignee_name)
 
         # Extract effective_date (when assignee did the work) for statistics/scheduling
@@ -3680,11 +3702,7 @@ class ChoreManager(BaseManager):
 
         other_assignee_states = None
         is_completed_by_other = False
-        if completion_criteria in (
-            const.COMPLETION_CRITERIA_SHARED_FIRST,
-            const.COMPLETION_CRITERIA_ROTATION_SIMPLE,
-            const.COMPLETION_CRITERIA_ROTATION_SMART,
-        ):
+        if completion_criteria == const.COMPLETION_CRITERIA_SHARED_FIRST:
             other_assignee_states = {}
             for other_assignee_id in assigned_assignees:
                 if other_assignee_id != assignee_id and other_assignee_id:
@@ -4058,14 +4076,30 @@ class ChoreManager(BaseManager):
         completed_by_assignee_id = None
         completed_by = chore_info.get(const.DATA_CHORE_COMPLETED_BY)
         if isinstance(completed_by, str):
-            completed_by_assignee_id = completed_by
+            completed_by_assignee_id = self._resolve_ownership_actor_to_assignee_id(
+                chore_id,
+                completed_by,
+            )
         elif isinstance(completed_by, list) and completed_by:
-            completed_by_assignee_id = completed_by[0]
+            first_actor = completed_by[0]
+            if isinstance(first_actor, str):
+                completed_by_assignee_id = self._resolve_ownership_actor_to_assignee_id(
+                    chore_id,
+                    first_actor,
+                )
 
         # Clear ownership tracking for fresh cycle
         if clear_ownership:
-            assignee_chore_data.pop(const.DATA_CHORE_CLAIMED_BY, None)
-            assignee_chore_data.pop(const.DATA_CHORE_COMPLETED_BY, None)
+            completion_criteria = chore_info.get(
+                const.DATA_CHORE_COMPLETION_CRITERIA,
+                const.COMPLETION_CRITERIA_INDEPENDENT,
+            )
+            if completion_criteria == const.COMPLETION_CRITERIA_INDEPENDENT:
+                assignee_chore_data.pop(const.DATA_CHORE_CLAIMED_BY, None)
+                assignee_chore_data.pop(const.DATA_CHORE_COMPLETED_BY, None)
+            else:
+                chore_info.pop(const.DATA_CHORE_CLAIMED_BY, None)
+                chore_info.pop(const.DATA_CHORE_COMPLETED_BY, None)
 
         # Clear pending claim count on reset
         if new_state == const.CHORE_STATE_PENDING:
@@ -4266,63 +4300,31 @@ class ChoreManager(BaseManager):
                 completing_assignee_name
             ]
 
-        elif completion_criteria == const.COMPLETION_CRITERIA_SHARED_FIRST:
-            # Update other assignees' completed_by
-            for other_assignee_id in chore_data.get(
-                const.DATA_CHORE_ASSIGNED_USER_IDS, []
-            ):
-                if other_assignee_id == assignee_id:
-                    continue
-                other_chore_data = self._get_assignee_chore_data(
-                    other_assignee_id, chore_id
-                )
-                other_chore_data[const.DATA_CHORE_COMPLETED_BY] = [
-                    completing_assignee_name
-                ]
-
         elif completion_criteria == const.COMPLETION_CRITERIA_SHARED:
-            # Append to list for all assigned assignees
-            for assigned_assignee_id in chore_data.get(
-                const.DATA_CHORE_ASSIGNED_USER_IDS, []
-            ):
-                assigned_chore_data = self._get_assignee_chore_data(
-                    assigned_assignee_id, chore_id
-                )
+            self._append_name_to_ownership_list(
+                chore_data,
+                const.DATA_CHORE_COMPLETED_BY,
+                completing_assignee_name,
+            )
 
-                # Initialize as list if needed
-                existing_completed = assigned_chore_data.get(
-                    const.DATA_CHORE_COMPLETED_BY
-                )
-                if isinstance(existing_completed, list):
-                    completed_list = existing_completed
-                elif isinstance(existing_completed, str) and existing_completed:
-                    completed_list = [existing_completed]
-                    assigned_chore_data[const.DATA_CHORE_COMPLETED_BY] = completed_list
-                else:
-                    completed_list = []
-                    assigned_chore_data[const.DATA_CHORE_COMPLETED_BY] = completed_list
-
-                # Append if not already present
-                if (
-                    isinstance(completed_list, list)
-                    and completing_assignee_name not in completed_list
-                ):
-                    completed_list.append(completing_assignee_name)
+        else:
+            chore_data[const.DATA_CHORE_COMPLETED_BY] = [completing_assignee_name]
 
     def _append_name_to_ownership_list(
         self,
-        assignee_chore_data: AssigneeChoreDataEntry,
+        ownership_data: AssigneeChoreDataEntry | ChoreData,
         field: str,
         assignee_name: str,
     ) -> None:
         """Append assignee name to ownership list field with normalization.
 
         Args:
-            assignee_chore_data: Assignee chore runtime data
+            ownership_data: Ownership authority runtime data
             field: Ownership field key (`claimed_by` or `completed_by`)
             assignee_name: Display name to append
         """
-        existing_value = assignee_chore_data.get(field)
+        ownership_data_dict = cast("dict[str, Any]", ownership_data)
+        existing_value = ownership_data_dict.get(field)
         if isinstance(existing_value, list):
             name_list = existing_value
         elif isinstance(existing_value, str) and existing_value:
@@ -4333,22 +4335,23 @@ class ChoreManager(BaseManager):
         if assignee_name not in name_list:
             name_list.append(assignee_name)
 
-        assignee_chore_data[field] = name_list
+        ownership_data_dict[field] = name_list
 
     def _remove_name_from_ownership_list(
         self,
-        assignee_chore_data: AssigneeChoreDataEntry,
+        ownership_data: AssigneeChoreDataEntry | ChoreData,
         field: str,
         assignee_name: str,
     ) -> None:
         """Remove assignee name from ownership list field with normalization.
 
         Args:
-            assignee_chore_data: Assignee chore runtime data
+            ownership_data: Ownership authority runtime data
             field: Ownership field key (`claimed_by` or `completed_by`)
             assignee_name: Display name to remove
         """
-        existing_value = assignee_chore_data.get(field)
+        ownership_data_dict = cast("dict[str, Any]", ownership_data)
+        existing_value = ownership_data_dict.get(field)
         if isinstance(existing_value, list):
             name_list = [
                 value
@@ -4361,9 +4364,9 @@ class ChoreManager(BaseManager):
             name_list = []
 
         if name_list:
-            assignee_chore_data[field] = name_list
+            ownership_data_dict[field] = name_list
         else:
-            assignee_chore_data.pop(field, None)
+            ownership_data_dict.pop(field, None)
 
     def _remove_assignee_from_ownership_fields(
         self,
@@ -4396,18 +4399,12 @@ class ChoreManager(BaseManager):
         )
 
         if completion_criteria == const.COMPLETION_CRITERIA_SHARED:
-            for assigned_assignee_id in chore_data.get(
-                const.DATA_CHORE_ASSIGNED_USER_IDS, []
-            ):
-                assigned_chore_data = self._get_assignee_chore_data(
-                    assigned_assignee_id, chore_id
+            for field in ownership_fields:
+                self._remove_name_from_ownership_list(
+                    chore_data,
+                    field,
+                    assignee_name,
                 )
-                for field in ownership_fields:
-                    self._remove_name_from_ownership_list(
-                        assigned_chore_data,
-                        field,
-                        assignee_name,
-                    )
             return
 
         if completion_criteria in (
@@ -4415,14 +4412,9 @@ class ChoreManager(BaseManager):
             const.COMPLETION_CRITERIA_ROTATION_SIMPLE,
             const.COMPLETION_CRITERIA_ROTATION_SMART,
         ):
-            for assigned_assignee_id in chore_data.get(
-                const.DATA_CHORE_ASSIGNED_USER_IDS, []
-            ):
-                assigned_chore_data = self._get_assignee_chore_data(
-                    assigned_assignee_id, chore_id
-                )
-                for field in ownership_fields:
-                    assigned_chore_data.pop(field, None)
+            chore_data_dict = cast("dict[str, Any]", chore_data)
+            for field in ownership_fields:
+                chore_data_dict.pop(field, None)
             return
 
         assignee_chore_data = self._get_assignee_chore_data(assignee_id, chore_id)
@@ -4432,6 +4424,41 @@ class ChoreManager(BaseManager):
                 field,
                 assignee_name,
             )
+
+    def _resolve_ownership_actor_to_assignee_id(
+        self,
+        chore_id: str,
+        ownership_actor: str,
+    ) -> str | None:
+        """Resolve ownership actor value to assignee ID.
+
+        Ownership values may be assignee IDs (legacy) or display names.
+        Rotation advancement requires assignee ID.
+
+        Args:
+            chore_id: The chore internal ID
+            ownership_actor: Ownership actor value from claimed_by/completed_by
+
+        Returns:
+            Assignee internal ID when resolved, else None.
+        """
+        if ownership_actor in self._coordinator.assignees_data:
+            return ownership_actor
+
+        chore_data = self._coordinator.chores_data.get(chore_id)
+        if not chore_data:
+            return None
+
+        for assigned_assignee_id in chore_data.get(
+            const.DATA_CHORE_ASSIGNED_USER_IDS, []
+        ):
+            assignee_info = self._coordinator.assignees_data.get(assigned_assignee_id)
+            if not assignee_info:
+                continue
+            if assignee_info.get(const.DATA_USER_NAME) == ownership_actor:
+                return assigned_assignee_id
+
+        return None
 
     def _handle_claim_criteria(
         self,
@@ -4456,31 +4483,15 @@ class ChoreManager(BaseManager):
             assignee_chore_data = self._get_assignee_chore_data(assignee_id, chore_id)
             assignee_chore_data[const.DATA_CHORE_CLAIMED_BY] = [claiming_assignee_name]
 
-        elif completion_criteria in (
-            const.COMPLETION_CRITERIA_SHARED_FIRST,
-            const.COMPLETION_CRITERIA_ROTATION_SIMPLE,
-            const.COMPLETION_CRITERIA_ROTATION_SMART,
-        ):
-            for other_assignee_id in chore_data.get(
-                const.DATA_CHORE_ASSIGNED_USER_IDS, []
-            ):
-                other_chore_data = self._get_assignee_chore_data(
-                    other_assignee_id, chore_id
-                )
-                other_chore_data[const.DATA_CHORE_CLAIMED_BY] = [claiming_assignee_name]
-
         elif completion_criteria == const.COMPLETION_CRITERIA_SHARED:
-            for assigned_assignee_id in chore_data.get(
-                const.DATA_CHORE_ASSIGNED_USER_IDS, []
-            ):
-                assigned_chore_data = self._get_assignee_chore_data(
-                    assigned_assignee_id, chore_id
-                )
-                self._append_name_to_ownership_list(
-                    assigned_chore_data,
-                    const.DATA_CHORE_CLAIMED_BY,
-                    claiming_assignee_name,
-                )
+            self._append_name_to_ownership_list(
+                chore_data,
+                const.DATA_CHORE_CLAIMED_BY,
+                claiming_assignee_name,
+            )
+
+        else:
+            chore_data[const.DATA_CHORE_CLAIMED_BY] = [claiming_assignee_name]
 
     def _all_assignees_approved(
         self, chore_id: str, assigned_assignees: list[str]
@@ -4887,6 +4898,13 @@ class ChoreManager(BaseManager):
         # v43+: Points are tracked in periods.all_time.points via StatisticsEngine
         # Don't store in deprecated total_points field - StatisticsManager handles via signals
 
+        ownership_data: AssigneeChoreDataEntry | ChoreData = assignee_chore_data
+        if (
+            chore_data is not None
+            and completion_criteria != const.COMPLETION_CRITERIA_INDEPENDENT
+        ):
+            ownership_data = chore_data
+
         # Clear claimed_by
         if effect.clear_claimed_by:
             preserve_shared_claim_history = (
@@ -4894,31 +4912,27 @@ class ChoreManager(BaseManager):
                 and effect.set_completed_by is not None
             )
             if not preserve_shared_claim_history:
-                assignee_chore_data.pop(const.DATA_CHORE_CLAIMED_BY, None)
+                ownership_data.pop(const.DATA_CHORE_CLAIMED_BY, None)
 
         # Clear completed_by
         if effect.clear_completed_by:
-            assignee_chore_data.pop(const.DATA_CHORE_COMPLETED_BY, None)
+            ownership_data.pop(const.DATA_CHORE_COMPLETED_BY, None)
 
         # Set claimed_by
         if effect.set_claimed_by:
             if completion_criteria == const.COMPLETION_CRITERIA_SHARED:
                 self._append_name_to_ownership_list(
-                    assignee_chore_data,
+                    ownership_data,
                     const.DATA_CHORE_CLAIMED_BY,
                     effect.set_claimed_by,
                 )
             else:
-                assignee_chore_data[const.DATA_CHORE_CLAIMED_BY] = [
-                    effect.set_claimed_by
-                ]
+                ownership_data[const.DATA_CHORE_CLAIMED_BY] = [effect.set_claimed_by]
 
         # Set completed_by
         if effect.set_completed_by:
             if completion_criteria == const.COMPLETION_CRITERIA_SHARED:
-                existing_completed = assignee_chore_data.get(
-                    const.DATA_CHORE_COMPLETED_BY
-                )
+                existing_completed = ownership_data.get(const.DATA_CHORE_COMPLETED_BY)
                 if isinstance(existing_completed, list):
                     completed_list = existing_completed
                 elif isinstance(existing_completed, str) and existing_completed:
@@ -4929,9 +4943,9 @@ class ChoreManager(BaseManager):
                 if effect.set_completed_by not in completed_list:
                     completed_list.append(effect.set_completed_by)
 
-                assignee_chore_data[const.DATA_CHORE_COMPLETED_BY] = completed_list
+                ownership_data[const.DATA_CHORE_COMPLETED_BY] = completed_list
             else:
-                assignee_chore_data[const.DATA_CHORE_COMPLETED_BY] = [
+                ownership_data[const.DATA_CHORE_COMPLETED_BY] = [
                     effect.set_completed_by
                 ]
 
@@ -5165,18 +5179,12 @@ class ChoreManager(BaseManager):
             const.COMPLETION_CRITERIA_INDEPENDENT,
         )
 
-        if completion_criteria == const.COMPLETION_CRITERIA_INDEPENDENT or (
-            ChoreEngine.is_rotation_mode(chore_data)
-        ):
-            # INDEPENDENT/ROTATION_*: store in per-assignee data
-            assignee_chore_data_item = self._get_assignee_chore_data(
-                assignee_id, chore_id
-            )
-            assignee_chore_data_item[const.DATA_USER_CHORE_DATA_LAST_COMPLETED] = (
-                effective_date_iso
-            )
+        assignee_chore_data_item = self._get_assignee_chore_data(assignee_id, chore_id)
+        assignee_chore_data_item[const.DATA_USER_CHORE_DATA_LAST_COMPLETED] = (
+            effective_date_iso
+        )
 
-        elif completion_criteria == const.COMPLETION_CRITERIA_SHARED:
+        if completion_criteria == const.COMPLETION_CRITERIA_SHARED:
             # SHARED_ALL: Collect all assigned assignees' last_claimed, use max
             assigned_assignees = chore_data.get(const.DATA_CHORE_ASSIGNED_USER_IDS, [])
             claim_timestamps: list[str] = []
@@ -5196,7 +5204,7 @@ class ChoreManager(BaseManager):
                 max(claim_timestamps) if claim_timestamps else fallback_iso
             )
 
-        else:
+        elif completion_criteria != const.COMPLETION_CRITERIA_INDEPENDENT:
             # SHARED_FIRST: Use winner's claim timestamp
             chore_data[const.DATA_CHORE_LAST_COMPLETED] = effective_date_iso
 
