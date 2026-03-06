@@ -1688,25 +1688,23 @@ async def _update_dashboard_metadata(
                 dashboard_item.get(CONF_REQUIRE_ADMIN, False),
             )
         ),
-        "config": {"mode": MODE_STORAGE},
-        "update": panel_exists,
-    }
-
-    current_show_in_sidebar = bool(
-        update_data.get(
-            CONF_SHOW_IN_SIDEBAR,
-            dashboard_item.get(CONF_SHOW_IN_SIDEBAR, True),
-        )
-    )
-    if current_show_in_sidebar:
-        panel_kwargs["sidebar_title"] = str(dashboard_item.get(CONF_TITLE, url_path))
-        panel_kwargs["sidebar_icon"] = str(
+        "show_in_sidebar": bool(
+            update_data.get(
+                CONF_SHOW_IN_SIDEBAR,
+                dashboard_item.get(CONF_SHOW_IN_SIDEBAR, True),
+            )
+        ),
+        "sidebar_title": str(dashboard_item.get(CONF_TITLE, url_path) or url_path),
+        "sidebar_icon": str(
             update_data.get(
                 CONF_ICON,
                 dashboard_item.get(CONF_ICON, DEFAULT_ICON),
             )
             or DEFAULT_ICON
-        )
+        ),
+        "config": {"mode": MODE_STORAGE},
+        "update": panel_exists,
+    }
 
     async_register_built_in_panel(hass, LOVELACE_DOMAIN, **panel_kwargs)
 
@@ -1912,13 +1910,12 @@ async def _create_dashboard_entry(
     panel_kwargs: dict[str, Any] = {
         "frontend_url_path": url_path,
         "require_admin": require_admin,
+        "show_in_sidebar": show_in_sidebar,
+        "sidebar_title": title,
+        "sidebar_icon": icon or DEFAULT_ICON,
         "config": {"mode": MODE_STORAGE},
         "update": panel_exists,
     }
-
-    if show_in_sidebar:
-        panel_kwargs["sidebar_title"] = title
-        panel_kwargs["sidebar_icon"] = icon or DEFAULT_ICON
 
     async_register_built_in_panel(hass, LOVELACE_DOMAIN, **panel_kwargs)
 
