@@ -228,6 +228,48 @@ class TestTranslationSensorArchitecture:
         assert es_sensor is None, "Spanish sensor should not exist"
 
 
+class TestDashboardHelperUiControl:
+    """Regression tests for helper-facing `ui_control` payloads."""
+
+    async def test_ui_control_defaults_to_rewards_header_expanded(
+        self,
+        hass: HomeAssistant,
+        scenario_minimal: SetupResult,
+    ) -> None:
+        """Dashboard helper should expose reviewed defaults when no override exists."""
+        helper_state = hass.states.get("sensor.zoe_choreops_ui_dashboard_helper")
+        assert helper_state is not None
+
+        ui_control = helper_state.attributes.get("ui_control")
+        assert isinstance(ui_control, dict)
+        assert ui_control["gamification"]["rewards"]["header_collapse"] is False
+
+    async def test_ui_control_reflects_persisted_rewards_header_collapse(
+        self,
+        hass: HomeAssistant,
+        scenario_minimal: SetupResult,
+    ) -> None:
+        """Dashboard helper should expose the reviewed persisted override."""
+        user_id = scenario_minimal.assignee_ids["Zoë"]
+        scenario_minimal.coordinator.assignees_data[user_id]["ui_preferences"] = {
+            "gamification": {
+                "rewards": {
+                    "header_collapse": True,
+                }
+            }
+        }
+
+        await scenario_minimal.coordinator.async_request_refresh()
+        await hass.async_block_till_done()
+
+        helper_state = hass.states.get("sensor.zoe_choreops_ui_dashboard_helper")
+        assert helper_state is not None
+
+        ui_control = helper_state.attributes.get("ui_control")
+        assert isinstance(ui_control, dict)
+        assert ui_control["gamification"]["rewards"]["header_collapse"] is True
+
+
 class TestAssigneeChoresSensorAttributes:
     """Regression tests for assignee chores sensor attribute completeness."""
 

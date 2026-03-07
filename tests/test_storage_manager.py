@@ -69,6 +69,61 @@ async def test_async_initialize_loads_existing_data(
     assert store.data[const.DATA_CHORES] == {"chore_1": {"name": "Clean room"}}
 
 
+async def test_set_data_normalizes_missing_user_ui_preferences(
+    hass: HomeAssistant,
+    store: ChoreOpsStore,
+) -> None:
+    """Test set_data adds an empty ui_preferences bucket for each user."""
+    applied = store.set_data(
+        {
+            const.DATA_USERS: {
+                "user_1": {
+                    const.DATA_USER_NAME: "Alice",
+                }
+            },
+            const.DATA_META: {
+                const.DATA_META_SCHEMA_VERSION: const.SCHEMA_VERSION_BETA5,
+            },
+        }
+    )
+
+    assert applied is True
+    assert store.data[const.DATA_USERS]["user_1"][const.DATA_USER_UI_PREFERENCES] == {}
+
+
+async def test_set_data_preserves_user_ui_preferences_mapping(
+    hass: HomeAssistant,
+    store: ChoreOpsStore,
+) -> None:
+    """Test set_data keeps nested ui_preferences mappings intact."""
+    ui_preferences = {
+        "gamification": {
+            "rewards": {
+                "header_collapse": True,
+            }
+        }
+    }
+    applied = store.set_data(
+        {
+            const.DATA_USERS: {
+                "user_1": {
+                    const.DATA_USER_NAME: "Alice",
+                    const.DATA_USER_UI_PREFERENCES: ui_preferences,
+                }
+            },
+            const.DATA_META: {
+                const.DATA_META_SCHEMA_VERSION: const.SCHEMA_VERSION_BETA5,
+            },
+        }
+    )
+
+    assert applied is True
+    assert (
+        store.data[const.DATA_USERS]["user_1"][const.DATA_USER_UI_PREFERENCES]
+        == ui_preferences
+    )
+
+
 async def test_async_initialize_skips_legacy_fallback_when_disabled(
     hass: HomeAssistant,
     store: ChoreOpsStore,

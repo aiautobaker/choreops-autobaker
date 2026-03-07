@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from custom_components.choreops import const
 from custom_components.choreops.helpers import (
     dashboard_builder as builder,
     dashboard_helpers as dh,
@@ -123,3 +124,12 @@ def test_user_game_full_template_renders_with_button_card_templates() -> None:
     assert isinstance(rendered["views"][0].get("sections"), list)
     assert isinstance(rendered.get("button_card_templates"), dict)
     assert "choreops_chore_row_v1" in rendered["button_card_templates"]
+
+
+def test_user_game_full_template_contains_ui_control_contract() -> None:
+    """Game full template should reference the reviewed UI control contract."""
+    template_str = _read_template("user-game-full-v1.yaml")
+
+    assert "state_attr(dashboard_helper, 'ui_control')" in template_str
+    assert f"{const.DOMAIN}.{const.SERVICE_MANAGE_UI_CONTROL}" in template_str
+    assert const.UI_CONTROL_PATH_GAMIFICATION_REWARDS_HEADER_COLLAPSE in template_str

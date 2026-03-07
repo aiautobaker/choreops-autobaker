@@ -105,11 +105,9 @@ from .type_defs import (
     AchievementProgress,
     AssigneeData,
     BadgeData,
-    BonusData,
     ChallengeData,
     ChallengeProgress,
     ChoreData,
-    PenaltyData,
     PeriodicStatsEntry,
     RewardData,
 )
@@ -1928,9 +1926,11 @@ class AssigneeBadgesSensor(ChoreOpsCoordinatorEntity, SensorEntity):
             extra_attrs[const.DATA_BADGE_TARGET] = target_info
 
         # Add awards if present
-        awards_info = maintenance_badge_info.get(const.DATA_BADGE_AWARDS, {})
-        if awards_info:
-            extra_attrs[const.DATA_BADGE_AWARDS] = awards_info
+        extra_attrs[const.DATA_BADGE_AWARDS] = (
+            self.coordinator.gamification_manager.get_structured_badge_awards(
+                maintenance_badge_info
+            )
+        )
 
         # Look up SystemBadgeSensor entity IDs for current, next_higher, next_lower badges
         # These allow the dashboard to directly reference badge definition sensors
@@ -2115,72 +2115,11 @@ class AssigneeBadgeProgressSensor(ChoreOpsCoordinatorEntity, SensorEntity):
             for chore_id in selected_chore_ids
         ]
 
-        awards_data = badge_info.get(const.DATA_BADGE_AWARDS, {})
-        if not isinstance(awards_data, dict):
-            awards_data = {}
-
-        award_items_raw = awards_data.get(const.DATA_BADGE_AWARDS_AWARD_ITEMS, [])
-        award_items = award_items_raw if isinstance(award_items_raw, list) else []
-
-        structured_awards: dict[str, Any] = {
-            const.DATA_BADGE_AWARDS_AWARD_ITEMS: list(award_items),
-            const.DATA_BADGE_AWARDS_AWARD_POINTS: float(
-                awards_data.get(const.DATA_BADGE_AWARDS_AWARD_POINTS, 0.0) or 0.0
-            ),
-            const.DATA_BADGE_AWARDS_POINT_MULTIPLIER: awards_data.get(
-                const.DATA_BADGE_AWARDS_POINT_MULTIPLIER
-            ),
-            const.AWARD_ITEMS_KEY_REWARDS: [],
-            const.AWARD_ITEMS_KEY_BONUSES: [],
-            const.AWARD_ITEMS_KEY_PENALTIES: [],
-        }
-
-        for item in award_items:
-            if not isinstance(item, str):
-                continue
-
-            if item.startswith(const.AWARD_ITEMS_PREFIX_REWARD):
-                reward_id = item.split(":", 1)[1]
-                reward_info: RewardData = cast(
-                    "RewardData", self.coordinator.rewards_data.get(reward_id, {})
-                )
-                structured_awards[const.AWARD_ITEMS_KEY_REWARDS].append(
-                    {
-                        const.DATA_REWARD_ID: reward_id,
-                        const.DATA_REWARD_NAME: reward_info.get(
-                            const.DATA_REWARD_NAME,
-                            reward_id,
-                        ),
-                    }
-                )
-            elif item.startswith(const.AWARD_ITEMS_PREFIX_BONUS):
-                bonus_id = item.split(":", 1)[1]
-                bonus_info: BonusData = cast(
-                    "BonusData", self.coordinator.bonuses_data.get(bonus_id, {})
-                )
-                structured_awards[const.AWARD_ITEMS_KEY_BONUSES].append(
-                    {
-                        const.DATA_BONUS_ID: bonus_id,
-                        const.DATA_BONUS_NAME: bonus_info.get(
-                            const.DATA_BONUS_NAME,
-                            bonus_id,
-                        ),
-                    }
-                )
-            elif item.startswith(const.AWARD_ITEMS_PREFIX_PENALTY):
-                penalty_id = item.split(":", 1)[1]
-                penalty_info: PenaltyData = cast(
-                    "PenaltyData", self.coordinator.penalties_data.get(penalty_id, {})
-                )
-                structured_awards[const.AWARD_ITEMS_KEY_PENALTIES].append(
-                    {
-                        const.DATA_PENALTY_ID: penalty_id,
-                        const.DATA_PENALTY_NAME: penalty_info.get(
-                            const.DATA_PENALTY_NAME,
-                            penalty_id,
-                        ),
-                    }
-                )
+        structured_awards = (
+            self.coordinator.gamification_manager.get_structured_badge_awards(
+                badge_info
+            )
+        )
 
         reset_schedule_raw = badge_info.get(const.DATA_BADGE_RESET_SCHEDULE, {})
         if not isinstance(reset_schedule_raw, dict):
@@ -2432,55 +2371,11 @@ class SystemBadgeSensor(ChoreOpsCoordinatorEntity, SensorEntity):
             for chore_id in selected_chore_ids
         ]
 
-        # Awards info
-        awards_data = badge_info.get(const.DATA_BADGE_AWARDS, {})
-
-        # Add friendly names for award items
-        award_items = awards_data.get(const.DATA_BADGE_AWARDS_AWARD_ITEMS, [])
-        friendly_award_names = []
-        for item in award_items:
-            if item.startswith(const.AWARD_ITEMS_PREFIX_REWARD):
-                reward_id = item.split(":", 1)[1]
-                reward_info: RewardData = cast(
-                    "RewardData", self.coordinator.rewards_data.get(reward_id, {})
-                )
-                friendly_name = reward_info.get(
-                    const.DATA_REWARD_NAME, f"Reward: {reward_id}"
-                )
-                friendly_award_names.append(
-                    f"{const.AWARD_ITEMS_PREFIX_REWARD}{friendly_name}"
-                )
-            elif item.startswith(const.AWARD_ITEMS_PREFIX_BONUS):
-                bonus_id = item.split(":", 1)[1]
-                bonus_info: BonusData = cast(
-                    "BonusData", self.coordinator.bonuses_data.get(bonus_id, {})
-                )
-                friendly_name = bonus_info.get(
-                    const.DATA_BONUS_NAME, f"Bonus: {bonus_id}"
-                )
-                friendly_award_names.append(
-                    f"{const.AWARD_ITEMS_PREFIX_BONUS}{friendly_name}"
-                )
-            elif item.startswith(const.AWARD_ITEMS_PREFIX_PENALTY):
-                penalty_id = item.split(":", 1)[1]
-                penalty_info: PenaltyData = cast(
-                    "PenaltyData", self.coordinator.penalties_data.get(penalty_id, {})
-                )
-                friendly_name = penalty_info.get(
-                    const.DATA_PENALTY_NAME, f"Penalty: {penalty_id}"
-                )
-                friendly_award_names.append(
-                    f"{const.AWARD_ITEMS_PREFIX_PENALTY}{friendly_name}"
-                )
-            elif item == const.AWARD_ITEMS_KEY_POINTS:
-                award_points = awards_data.get(const.DATA_BADGE_AWARDS_AWARD_POINTS, 0)
-                friendly_award_names.append(f"Points: {award_points}")
-            elif item == const.AWARD_ITEMS_KEY_POINTS_MULTIPLIER:
-                points_multiplier = awards_data.get(
-                    const.DATA_BADGE_AWARDS_POINT_MULTIPLIER, 1.0
-                )
-                friendly_award_names.append(f"Multiplier: {points_multiplier}")
-        attributes[const.ATTR_BADGE_AWARDS] = friendly_award_names
+        attributes[const.ATTR_BADGE_AWARDS] = (
+            self.coordinator.gamification_manager.get_structured_badge_awards(
+                badge_info
+            )
+        )
 
         attributes[const.ATTR_RESET_SCHEDULE] = badge_info.get(
             const.DATA_BADGE_RESET_SCHEDULE, None

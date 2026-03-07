@@ -652,6 +652,16 @@ class TestCumulativeThreeBadgeSensorAttributes:
         assert const.ATTR_HIGHEST_EARNED_BADGE_EID in attrs
         assert const.ATTR_NEXT_HIGHER_BADGE_EID in attrs
         assert const.ATTR_NEXT_LOWER_BADGE_EID in attrs
+        assert const.ATTR_BADGE_AWARDS in attrs
+
+        awards = attrs[const.ATTR_BADGE_AWARDS]
+        assert isinstance(awards, dict)
+        assert const.DATA_BADGE_AWARDS_AWARD_ITEMS not in awards
+        assert const.DATA_BADGE_AWARDS_AWARD_POINTS in awards
+        assert const.DATA_BADGE_AWARDS_POINT_MULTIPLIER in awards
+        assert isinstance(awards[const.AWARD_ITEMS_KEY_REWARDS], list)
+        assert isinstance(awards[const.AWARD_ITEMS_KEY_BONUSES], list)
+        assert isinstance(awards[const.AWARD_ITEMS_KEY_PENALTIES], list)
 
         badge_name_to_assigned = {
             badge_data.get(const.DATA_BADGE_NAME, ""): badge_data.get(

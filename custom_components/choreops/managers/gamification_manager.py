@@ -2968,6 +2968,98 @@ class GamificationManager(BaseManager):
             "penalty_ids": to_penalize,
         }
 
+    def get_structured_badge_awards(
+        self, badge_data: BadgeData | dict[str, Any]
+    ) -> dict[str, Any]:
+        """Return badge awards grouped into a UI-friendly structure.
+
+        This read-only helper converts the canonical `award_items` storage
+        contract into a normalized sensor/dashboard payload so templates can
+        consume award data without string parsing.
+
+        Args:
+            badge_data: Badge definition containing the awards block.
+
+        Returns:
+            Structured awards payload with stable keys for points,
+            multiplier, rewards, bonuses, and penalties.
+        """
+        award_data_raw = badge_data.get(const.DATA_BADGE_AWARDS, {})
+        award_data = (
+            cast("dict[str, Any]", award_data_raw)
+            if isinstance(award_data_raw, dict)
+            else {}
+        )
+
+        award_items_raw = award_data.get(const.DATA_BADGE_AWARDS_AWARD_ITEMS, [])
+        award_items = [item for item in award_items_raw if isinstance(item, str)]
+
+        to_award, to_penalize = self.process_award_items(
+            award_items,
+            self.coordinator.rewards_data,
+            self.coordinator.bonuses_data,
+            self.coordinator.penalties_data,
+        )
+
+        structured_awards: dict[str, Any] = {
+            const.DATA_BADGE_AWARDS_AWARD_POINTS: float(
+                award_data.get(const.DATA_BADGE_AWARDS_AWARD_POINTS, 0.0) or 0.0
+            ),
+            const.DATA_BADGE_AWARDS_POINT_MULTIPLIER: award_data.get(
+                const.DATA_BADGE_AWARDS_POINT_MULTIPLIER
+            ),
+            const.AWARD_ITEMS_KEY_REWARDS: [],
+            const.AWARD_ITEMS_KEY_BONUSES: [],
+            const.AWARD_ITEMS_KEY_PENALTIES: [],
+        }
+
+        for reward_id in to_award.get(const.AWARD_ITEMS_KEY_REWARDS, []):
+            reward_info = cast(
+                "dict[str, Any]",
+                self.coordinator.rewards_data.get(reward_id, {}),
+            )
+            structured_awards[const.AWARD_ITEMS_KEY_REWARDS].append(
+                {
+                    const.DATA_REWARD_ID: reward_id,
+                    const.DATA_REWARD_NAME: reward_info.get(
+                        const.DATA_REWARD_NAME,
+                        reward_id,
+                    ),
+                }
+            )
+
+        for bonus_id in to_award.get(const.AWARD_ITEMS_KEY_BONUSES, []):
+            bonus_info = cast(
+                "dict[str, Any]",
+                self.coordinator.bonuses_data.get(bonus_id, {}),
+            )
+            structured_awards[const.AWARD_ITEMS_KEY_BONUSES].append(
+                {
+                    const.DATA_BONUS_ID: bonus_id,
+                    const.DATA_BONUS_NAME: bonus_info.get(
+                        const.DATA_BONUS_NAME,
+                        bonus_id,
+                    ),
+                }
+            )
+
+        for penalty_id in to_penalize:
+            penalty_info = cast(
+                "dict[str, Any]",
+                self.coordinator.penalties_data.get(penalty_id, {}),
+            )
+            structured_awards[const.AWARD_ITEMS_KEY_PENALTIES].append(
+                {
+                    const.DATA_PENALTY_ID: penalty_id,
+                    const.DATA_PENALTY_NAME: penalty_info.get(
+                        const.DATA_PENALTY_NAME,
+                        penalty_id,
+                    ),
+                }
+            )
+
+        return structured_awards
+
     def get_badge_in_scope_chores_list(
         self,
         badge_info: BadgeData,

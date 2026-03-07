@@ -1250,7 +1250,9 @@ class TestSpecialOccasionBadgeTargetTypes:
         # Structured awards payload (not comma-delimited text)
         awards = attrs[const.ATTR_BADGE_AWARDS]
         assert isinstance(awards, dict)
-        assert isinstance(awards[const.DATA_BADGE_AWARDS_AWARD_ITEMS], list)
+        assert const.DATA_BADGE_AWARDS_AWARD_ITEMS not in awards
+        assert const.DATA_BADGE_AWARDS_AWARD_POINTS in awards
+        assert const.DATA_BADGE_AWARDS_POINT_MULTIPLIER in awards
         assert isinstance(awards[const.AWARD_ITEMS_KEY_REWARDS], list)
         assert isinstance(awards[const.AWARD_ITEMS_KEY_BONUSES], list)
         assert isinstance(awards[const.AWARD_ITEMS_KEY_PENALTIES], list)
