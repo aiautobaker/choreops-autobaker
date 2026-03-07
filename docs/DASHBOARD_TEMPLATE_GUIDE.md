@@ -770,8 +770,8 @@ Note: Some runtime payload keys still use legacy names for backward compatibilit
 
 The dashboard helper also exposes resolved UI control state for reviewed, dashboard-safe preferences:
 
-| Field        | Type | Description |
-| ------------ | ---- | ----------- |
+| Field        | Type | Description                                                  |
+| ------------ | ---- | ------------------------------------------------------------ |
 | `ui_control` | dict | Resolved per-user UI control payload for dashboard rendering |
 
 Authoring rules:
@@ -780,6 +780,7 @@ Authoring rules:
 - Treat it as read-only.
 - Use reviewed nested keys only.
 - Treat missing keys as the default UI state.
+- A blank-key `remove` call to `choreops.manage_ui_control` clears all persisted UI preferences for the targeted user, so helper consumers naturally fall back to dashboard defaults on the next refresh.
 - Do not read or rely on raw stored `ui_preferences` from backend storage shape.
 
 Current reviewed path support:

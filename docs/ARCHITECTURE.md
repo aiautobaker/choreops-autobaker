@@ -806,31 +806,62 @@ The architecture provides per-assignee and per-approver dashboard language selec
 
 ---
 
-## Dashboard Generation System
+## Dashboard Architecture
 
-The Options Flow provides automated dashboard generation, creating fully-functional Lovelace dashboards with pre-configured views for assignee management and approver administration.
+ChoreOps dashboard support is a three-part contract: dashboard generation creates
+and updates Lovelace dashboards, dashboard templates define the authored UI
+surface, and dashboard UI control provides a small backend-owned state channel
+for advanced per-user behavior.
 
-### Architecture Components
+### Dashboard generation overview
 
-**Dashboard template registry** (`dashboards/dashboard_registry.json`):
-
-- Manifest-driven template IDs and source paths are the runtime contract
-- Bundled fallback assets live in `custom_components/choreops/dashboards/`
-- Canonical authoring source is `choreops-dashboards`; vendored assets are synced via parity workflow
-- Shared-fragment contract fields (`shared_contract_version`, `shared_fragments_required`, `shared_fragments_optional`) are validation metadata and release-prepare closure hints
-
-**Generation Flow** (`options_flow.py` → `dashboard_helpers.py`):
+Dashboard generation is managed by the Options Flow and helper pipeline
+(`options_flow.py` → `dashboard_helpers.py`). It creates or updates complete
+Lovelace dashboards with user and admin views using a deterministic prepared
+asset set.
 
 - User selects a dashboard action (`create`, `update`, `delete`, `exit`) in a CRUD hub step
 - Create and update use a shared sectioned configure step (assignee views, admin views, access/sidebar, template version)
 - Admin layout supports none, shared, per user, and both (internal enum key for per user is `per_assignee`)
 - Update path applies changes in place to the selected dashboard URL path
-- Build-time rendering: Python Jinja2 populates `user.*` + `integration.entry_id` context with `<< >>` delimiters
-- Runtime rendering: Home Assistant Jinja2 fetches live data with `{{ }}` delimiters
-- Templates render as full dashboard documents (`views` root, optional root `button_card_templates`)
-- Builder extracts rendered views and merges root template blocks deterministically without view hoisting
-- Shared marker composition is executed in runtime compile paths (prepared-assets compile / local fetch), not in sync/apply disk writes
-- Output: Lovelace storage dashboard config persisted through the dashboard builder helpers
+- Output is persisted as Lovelace storage dashboard config through the dashboard builder helpers
+
+### Dashboard template overview
+
+Dashboard templates are manifest-driven assets defined by
+`dashboards/dashboard_registry.json` and authored canonically in
+`choreops-dashboards`, with vendored runtime copies in
+`custom_components/choreops/dashboards/`.
+
+- Manifest-driven template IDs and source paths are the runtime contract
+- Templates render full dashboard documents (`views` root, optional root `button_card_templates`)
+- Build-time rendering uses Python Jinja2 with `<< >>` delimiters for injected context
+- Runtime rendering uses Home Assistant Jinja2 with `{{ }}` delimiters for live entity data
+- Shared marker composition happens during runtime compile paths, not sync/apply disk writes
+
+For authoring rules, helper payloads, shared fragments, and template examples,
+use [docs/DASHBOARD_TEMPLATE_GUIDE.md](DASHBOARD_TEMPLATE_GUIDE.md) as the
+durable source of truth.
+
+### Dashboard UI control overview
+
+Dashboard UI control extends the dashboard helper with a reviewed, resolved
+`ui_control` payload so templates can support richer per-user behavior without
+introducing standalone Home Assistant helpers.
+
+- Durable user overrides are stored in `users[*].ui_preferences`
+- Templates read only the resolved helper surface: `state_attr(dashboard_helper, 'ui_control')`
+- The helper never exposes raw `ui_preferences` storage data directly
+- The first reviewed control path is `gamification/rewards/header_collapse`
+- `choreops.manage_ui_control` provides create, update, and remove mutations, including blank-key clear-all fallback to dashboard defaults
+
+### Supporting dashboard runtime components
+
+**Dashboard template registry** (`dashboards/dashboard_registry.json`):
+
+- Bundled fallback assets live in `custom_components/choreops/dashboards/`
+- Canonical authoring source is `choreops-dashboards`; vendored assets are synced via parity workflow
+- Shared-fragment contract fields (`shared_contract_version`, `shared_fragments_required`, `shared_fragments_optional`) are validation metadata and release-prepare closure hints
 
 **System Dashboard Selector**:
 
