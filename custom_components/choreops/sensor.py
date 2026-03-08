@@ -1919,7 +1919,15 @@ class AssigneeBadgesSensor(ChoreOpsCoordinatorEntity, SensorEntity):
         # Add reset_schedule fields if recurring_frequency is present
         reset_schedule = maintenance_badge_info.get(const.DATA_BADGE_RESET_SCHEDULE, {})
         if reset_schedule:
-            extra_attrs[const.DATA_BADGE_RESET_SCHEDULE] = reset_schedule
+            extra_attrs[const.DATA_BADGE_RESET_SCHEDULE] = {
+                key: value
+                for key, value in reset_schedule.items()
+                if key
+                not in {
+                    const.DATA_BADGE_RESET_SCHEDULE_START_DATE,
+                    const.DATA_BADGE_RESET_SCHEDULE_END_DATE,
+                }
+            }
 
         # Add Target fields if present
         if target_info:

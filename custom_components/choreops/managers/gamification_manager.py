@@ -1057,6 +1057,12 @@ class GamificationManager(BaseManager):
         if schedule_changed:
             self.coordinator._persist_and_update()
 
+        if not self._is_non_cumulative_badge_active_today(
+            badge_data,
+            today_iso=context["today_iso"],
+        ):
+            return
+
         badges_earned = assignee_data.get(const.DATA_USER_BADGES_EARNED, {})
         already_earned = badge_id in badges_earned
 
@@ -1072,6 +1078,22 @@ class GamificationManager(BaseManager):
 
         # Periodic badges use same criteria for first award and re-awards
         result = GamificationEngine.evaluate_badge(runtime_context, badge_dict)
+
+        const.LOGGER.debug(
+            "Periodic badge evaluation result for assignee %s badge %s: criteria_met=%s overall_progress=%s current_value=%s target_type=%s today=%s schedule_changed=%s",
+            assignee_id,
+            badge_id,
+            result.get("criteria_met", False),
+            result.get("overall_progress", 0.0),
+            (
+                result.get("criterion_results", [{}])[0].get("current_value", 0.0)
+                if result.get("criterion_results")
+                else 0.0
+            ),
+            canonical_target.get("source_raw_type", ""),
+            context["today_iso"],
+            schedule_changed,
+        )
 
         if self._persist_target_progress_state(
             assignee_id,
@@ -1245,6 +1267,41 @@ class GamificationManager(BaseManager):
             return start_date <= last_awarded_date <= end_date
 
         return last_awarded_date == dt_today_local()
+
+    def _is_non_cumulative_badge_active_today(
+        self,
+        badge_data: BadgeData,
+        *,
+        today_iso: str,
+    ) -> bool:
+        """Return True when the current day is inside the badge schedule window."""
+        reset_schedule = cast(
+            "dict[str, Any]",
+            badge_data.get(const.DATA_BADGE_RESET_SCHEDULE, {}),
+        )
+        recurring_frequency = str(
+            reset_schedule.get(
+                const.DATA_BADGE_RESET_SCHEDULE_RECURRING_FREQUENCY,
+                const.FREQUENCY_NONE,
+            )
+        )
+
+        if recurring_frequency == const.FREQUENCY_NONE:
+            return True
+
+        start_date_iso = str(
+            reset_schedule.get(const.DATA_BADGE_RESET_SCHEDULE_START_DATE, "")
+        )
+        end_date_iso = str(
+            reset_schedule.get(const.DATA_BADGE_RESET_SCHEDULE_END_DATE, "")
+        )
+
+        if start_date_iso and today_iso < start_date_iso:
+            return False
+        if end_date_iso and today_iso > end_date_iso:
+            return False
+
+        return True
 
     def _build_target_runtime_context(
         self,
@@ -1439,6 +1496,19 @@ class GamificationManager(BaseManager):
         if end_date_iso >= today_iso:
             return False
 
+        const.LOGGER.debug(
+            "Periodic badge cycle rollover check for assignee %s badge %s with schedule start=%s end=%s today=%s and progress points=%s chores=%s days=%s last_update_day=%s",
+            assignee_id,
+            badge_id,
+            reset_schedule.get(const.DATA_BADGE_RESET_SCHEDULE_START_DATE, ""),
+            end_date_iso,
+            today_iso,
+            progress.get(const.DATA_USER_BADGE_PROGRESS_POINTS_CYCLE_COUNT, 0.0),
+            progress.get(const.DATA_USER_BADGE_PROGRESS_CHORES_CYCLE_COUNT, 0),
+            progress.get(const.DATA_USER_BADGE_PROGRESS_DAYS_CYCLE_COUNT, 0),
+            progress.get(const.DATA_USER_BADGE_PROGRESS_LAST_UPDATE_DAY, ""),
+        )
+
         rolled_cycles = 0
         current_end = end_date_iso
         previous_end = end_date_iso
@@ -1485,6 +1555,15 @@ class GamificationManager(BaseManager):
         reset_schedule[const.DATA_BADGE_RESET_SCHEDULE_START_DATE] = next_start
         reset_schedule[const.DATA_BADGE_RESET_SCHEDULE_END_DATE] = current_end
 
+        const.LOGGER.debug(
+            "Periodic badge cycle rollover advancing assignee %s badge %s by %s cycles to schedule start=%s end=%s",
+            assignee_id,
+            badge_id,
+            rolled_cycles,
+            next_start,
+            current_end,
+        )
+
         assigned_to = cast(
             "list[str]",
             badge_data.get(const.DATA_BADGE_ASSIGNED_USER_IDS, []) or [assignee_id],
@@ -1505,10 +1584,45 @@ class GamificationManager(BaseManager):
             )
             if not assigned_progress:
                 continue
+            const.LOGGER.debug(
+                "Periodic badge cycle rollover resetting assignee %s badge %s from points=%s chores=%s days=%s last_update_day=%s",
+                assigned_assignee_id,
+                badge_id,
+                assigned_progress.get(
+                    const.DATA_USER_BADGE_PROGRESS_POINTS_CYCLE_COUNT, 0.0
+                ),
+                assigned_progress.get(
+                    const.DATA_USER_BADGE_PROGRESS_CHORES_CYCLE_COUNT, 0
+                ),
+                assigned_progress.get(
+                    const.DATA_USER_BADGE_PROGRESS_DAYS_CYCLE_COUNT, 0
+                ),
+                assigned_progress.get(
+                    const.DATA_USER_BADGE_PROGRESS_LAST_UPDATE_DAY, ""
+                ),
+            )
             self._reset_non_cumulative_badge_progress_runtime_fields(
                 assigned_assignee_id,
                 badge_id,
                 assigned_progress,
+            )
+            const.LOGGER.debug(
+                "Periodic badge cycle rollover reset complete for assignee %s badge %s to points=%s chores=%s days=%s last_update_day=%s status=%s",
+                assigned_assignee_id,
+                badge_id,
+                assigned_progress.get(
+                    const.DATA_USER_BADGE_PROGRESS_POINTS_CYCLE_COUNT, 0.0
+                ),
+                assigned_progress.get(
+                    const.DATA_USER_BADGE_PROGRESS_CHORES_CYCLE_COUNT, 0
+                ),
+                assigned_progress.get(
+                    const.DATA_USER_BADGE_PROGRESS_DAYS_CYCLE_COUNT, 0
+                ),
+                assigned_progress.get(
+                    const.DATA_USER_BADGE_PROGRESS_LAST_UPDATE_DAY, ""
+                ),
+                assigned_progress.get(const.DATA_USER_BADGE_PROGRESS_STATUS, ""),
             )
 
         return True
@@ -1731,6 +1845,22 @@ class GamificationManager(BaseManager):
             const.LOGGER.warning(
                 "Skipping periodic badge progress persistence for unknown target type '%s'",
                 target_type,
+            )
+
+        if changed:
+            const.LOGGER.debug(
+                "Periodic badge progress persisted for assignee %s badge %s with status=%s points=%s chores=%s days=%s overall_progress=%s criteria_met=%s last_update_day=%s persist_bucket=%s today=%s",
+                assignee_id,
+                badge_id,
+                progress.get(const.DATA_USER_BADGE_PROGRESS_STATUS, ""),
+                progress.get(const.DATA_USER_BADGE_PROGRESS_POINTS_CYCLE_COUNT, 0.0),
+                progress.get(const.DATA_USER_BADGE_PROGRESS_CHORES_CYCLE_COUNT, 0),
+                progress.get(const.DATA_USER_BADGE_PROGRESS_DAYS_CYCLE_COUNT, 0),
+                progress.get(const.DATA_USER_BADGE_PROGRESS_OVERALL_PROGRESS, 0.0),
+                progress.get(const.DATA_USER_BADGE_PROGRESS_CRITERIA_MET, False),
+                progress.get(const.DATA_USER_BADGE_PROGRESS_LAST_UPDATE_DAY, ""),
+                persist_bucket,
+                today_iso,
             )
 
         return changed
