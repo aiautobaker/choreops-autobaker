@@ -55,7 +55,7 @@ def test_build_dashboard_provenance_includes_required_metadata_keys() -> None:
     """Provenance builder returns required metadata keys for stamped dashboards."""
     provenance = builder._build_dashboard_provenance(
         integration_entry_id="entry-123",
-        template_id="user-minimal-v1",
+        template_id="user-chores-standard-v1",
         requested_release_selection=const.DASHBOARD_RELEASE_MODE_LATEST_STABLE,
         effective_release_ref="0.0.1-beta.3",
         resolution_reason="pinned_tag",
@@ -65,7 +65,10 @@ def test_build_dashboard_provenance_includes_required_metadata_keys() -> None:
     )
 
     assert provenance[const.ATTR_INTEGRATION_ENTRY_ID] == "entry-123"
-    assert provenance[const.DASHBOARD_PROVENANCE_KEY_TEMPLATE_ID] == "user-minimal-v1"
+    assert (
+        provenance[const.DASHBOARD_PROVENANCE_KEY_TEMPLATE_ID]
+        == "user-chores-standard-v1"
+    )
     assert provenance[const.DASHBOARD_PROVENANCE_KEY_SOURCE_TYPE] == "remote_release"
     assert provenance[const.DASHBOARD_PROVENANCE_KEY_EFFECTIVE_REF] == "0.0.1-beta.3"
     assert provenance[const.DASHBOARD_PROVENANCE_KEY_GENERATED_AT] == (

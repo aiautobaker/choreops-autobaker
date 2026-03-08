@@ -1346,6 +1346,103 @@ class TestSpecialOccasionBadgeTargetTypes:
         assert const.DATA_USER_BADGE_PROGRESS_START_DATE not in badge_progress
         assert const.DATA_USER_BADGE_PROGRESS_END_DATE not in badge_progress
 
+    async def test_special_occasion_rollover_skips_future_window_evaluation(
+        self,
+        hass: HomeAssistant,
+        setup_minimal: SetupResult,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Yearly special-occasion badges skip evaluation after rollover to next year."""
+        config_entry = setup_minimal.config_entry
+        coordinator = setup_minimal.coordinator
+        assignee_id = next(iter(coordinator.assignees_data.keys()))
+
+        badge_data = {
+            CFOF_BADGES_INPUT_NAME: "Birthday Future Window Guard",
+            CFOF_BADGES_INPUT_ICON: "mdi:cake-variant",
+            CFOF_BADGES_INPUT_OCCASION_TYPE: const.OCCASION_BIRTHDAY,
+            CFOF_BADGES_INPUT_ASSIGNED_USER_IDS: [assignee_id],
+            CFOF_BADGES_INPUT_AWARD_POINTS: 10.0,
+            CFOF_BADGES_INPUT_AWARD_ITEMS: ["points"],
+        }
+
+        await add_badge_via_options_flow(
+            hass,
+            config_entry.entry_id,
+            BADGE_TYPE_SPECIAL_OCCASION,
+            badge_data,
+        )
+
+        badge_id, badge_info = get_badge_by_name(
+            coordinator, "Birthday Future Window Guard"
+        )
+        badge_progress = coordinator.assignees_data[assignee_id][
+            DATA_USER_BADGE_PROGRESS
+        ][badge_id]
+
+        today_iso = dt_today_iso()
+        stale_end = dt_add_interval(
+            today_iso,
+            interval_unit=const.TIME_UNIT_DAYS,
+            delta=-1,
+            return_type=const.HELPER_RETURN_ISO_DATE,
+        )
+        badge_info[const.DATA_BADGE_RESET_SCHEDULE] = {
+            const.DATA_BADGE_RESET_SCHEDULE_RECURRING_FREQUENCY: const.FREQUENCY_YEARLY,
+            const.DATA_BADGE_RESET_SCHEDULE_START_DATE: stale_end,
+            const.DATA_BADGE_RESET_SCHEDULE_END_DATE: stale_end,
+        }
+        badge_progress[const.DATA_USER_BADGE_PROGRESS_CHORES_CYCLE_COUNT] = 16
+        badge_progress[const.DATA_USER_BADGE_PROGRESS_LAST_UPDATE_DAY] = today_iso
+
+        persist_calls = 0
+
+        def _count_persist() -> None:
+            nonlocal persist_calls
+            persist_calls += 1
+
+        def _fail_if_evaluated(*_: Any, **__: Any) -> Any:
+            pytest.fail("Future-window special-occasion badge should not be evaluated")
+
+        monkeypatch.setattr(coordinator, "_persist_and_update", _count_persist)
+        monkeypatch.setattr(
+            "custom_components.choreops.managers.gamification_manager.GamificationEngine.evaluate_badge",
+            _fail_if_evaluated,
+        )
+
+        context = coordinator.gamification_manager._build_evaluation_context(
+            assignee_id
+        )
+
+        assert context is not None
+
+        await coordinator.gamification_manager._evaluate_periodic_badge(
+            assignee_id,
+            badge_id,
+            badge_info,
+            context,
+        )
+
+        assert persist_calls == 1
+        assert (
+            badge_info[const.DATA_BADGE_RESET_SCHEDULE][
+                const.DATA_BADGE_RESET_SCHEDULE_START_DATE
+            ]
+            == badge_info[const.DATA_BADGE_RESET_SCHEDULE][
+                const.DATA_BADGE_RESET_SCHEDULE_END_DATE
+            ]
+        )
+        assert (
+            badge_info[const.DATA_BADGE_RESET_SCHEDULE][
+                const.DATA_BADGE_RESET_SCHEDULE_START_DATE
+            ]
+            > today_iso
+        )
+        assert badge_progress[const.DATA_USER_BADGE_PROGRESS_CHORES_CYCLE_COUNT] == 0
+        assert (
+            badge_progress.get(const.DATA_USER_BADGE_PROGRESS_LAST_UPDATE_DAY, "") == ""
+        )
+
 
 # ============================================================================
 # BADGE STEP ID VERIFICATION TESTS

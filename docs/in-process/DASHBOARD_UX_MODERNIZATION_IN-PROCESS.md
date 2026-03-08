@@ -253,8 +253,8 @@ This avoids prompt handling and reuses the documented sandbox token without hard
   **Files**: `choreops-dashboards/templates/user-chore-essentials-v1.yaml`, `choreops-dashboards/preferences/user-chore-essentials-v1.md`, `choreops-dashboards/dashboard_registry.json`.
   **Finalization gate (required for this step)**: parity tests, translation coverage, and post-change sync/contract validation. 2. [x] Finalize design of `user-chores-v1`, then remove `user-essential-v1.yaml`.
   **Files**: `choreops-dashboards/templates/user-chores-v1.yaml`, `choreops-dashboards/templates/user-essential-v1.yaml` (remove), `choreops-dashboards/preferences/user-chores-v1.md`, `choreops-dashboards/preferences/user-essential-v1.md` (deprecate/remove), `choreops-dashboards/dashboard_registry.json`.
-  **Finalization gate (required for this step)**: parity tests, translation coverage, and post-change sync/contract validation. 3. [x] Create and finalize a kid-focused chores template version (stripped-down `user-chores` variant with larger/friendlier button-card tiles, while keeping baseline color/state/action semantics aligned to `user-chores-v1`).
-  **Files**: `choreops-dashboards/templates/user-kids-chores-v1.yaml` (new), `choreops-dashboards/preferences/user-kids-chores-v1.md` (new), `choreops-dashboards/dashboard_registry.json`, related docs in `docs/DASHBOARD_TEMPLATE_GUIDE.md`.
+  **Finalization gate (required for this step)**: parity tests, translation coverage, and post-change sync/contract validation. 3. [x] Finalize the kid-focused chores presentation path (pre-release consolidation folded the larger/friendlier kids row variant into `user-chores-v1` instead of shipping a separate template, while keeping baseline color/state/action semantics aligned to `user-chores-v1`).
+  **Files**: `choreops-dashboards/templates/user-chores-v1.yaml`, `choreops-dashboards/preferences/user-chores-v1.md`, `choreops-dashboards/dashboard_registry.json`, related docs in `docs/DASHBOARD_TEMPLATE_GUIDE.md`.
   **Finalization gate (required for this step)**: parity tests, translation coverage, and post-change sync/contract validation. 4. [ ] Create and finalize a modern gamification template version.
   **Files**: `choreops-dashboards/templates/user-gamification-v2.yaml` (new), `choreops-dashboards/preferences/user-gamification-v2.md` (new), `choreops-dashboards/dashboard_registry.json`, related docs in `docs/DASHBOARD_TEMPLATE_GUIDE.md`.
   **Finalization gate (required for this step)**: parity tests, translation coverage, and post-change sync/contract validation. 5. [x] Capture 4A closure evidence and release readiness notes.
@@ -263,6 +263,11 @@ This avoids prompt handling and reuses the documented sandbox token without hard
   - Preserve strict template contract and dependency declarations as user templates evolve.
   - Avoid introducing custom-card development scope beyond existing ecosystem cards.
   - Keep single-path compile/parity guarantees intact during UX iteration.
+
+#### Phase 4A closure decisions to ratify before sign-off
+
+- [ ] Confirm the dashboard state layering standard: `pref_*` remains the template-authored default layer, reviewed `ui_control` keys remain durable per-user overrides, and any future temporary header/filter interactions stay separate from durable persisted state until a dedicated transient pattern is approved.
+- [ ] Confirm the long-term top-level `ui_control` namespace strategy for dashboard keys (for example, template-scoped naming aligned to a template id vs a broader feature/surface namespace) before Phase 4A is marked fully closed.
 
 ### Phase 3C – Single-path contract enforcement
 

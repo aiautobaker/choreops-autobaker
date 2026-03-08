@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
 
 from custom_components.choreops.helpers import dashboard_builder as builder
+
+
+class _FakeHass(SimpleNamespace):
+    """Minimal Home Assistant stub for template fetch tests."""
+
+    async def async_add_executor_job(self, func, *args):
+        """Run executor jobs inline for tests."""
+        return func(*args)
 
 
 @pytest.mark.asyncio
@@ -45,7 +53,9 @@ async def test_fetch_template_uses_fallback_release_candidate(
     monkeypatch.setattr(builder, "_fetch_remote_template", _mock_remote_fetch)
     monkeypatch.setattr(builder, "_fetch_local_template", _mock_local_fetch)
 
-    template = await builder.fetch_dashboard_template(MagicMock(), style="full")
+    template = await builder.fetch_dashboard_template(
+        _FakeHass(), style="user-gamification-premier-v1"
+    )
 
     assert template == "remote-fallback-template"
 
@@ -79,7 +89,9 @@ async def test_fetch_template_falls_back_to_local_when_remote_unavailable(
     monkeypatch.setattr(builder, "resolve_dashboard_release_selection", _mock_resolve)
     monkeypatch.setattr(builder, "_fetch_local_template", _mock_local_fetch)
 
-    template = await builder.fetch_dashboard_template(MagicMock(), style="minimal")
+    template = await builder.fetch_dashboard_template(
+        _FakeHass(), style="user-chores-essential-v1"
+    )
 
     assert template == "local-template"
 
@@ -119,4 +131,6 @@ async def test_fetch_template_raises_when_remote_and_local_missing(
     monkeypatch.setattr(builder, "_fetch_local_template", _mock_local_fetch)
 
     with pytest.raises(builder.DashboardTemplateError):
-        await builder.fetch_dashboard_template(MagicMock(), style="full")
+        await builder.fetch_dashboard_template(
+            _FakeHass(), style="user-gamification-premier-v1"
+        )

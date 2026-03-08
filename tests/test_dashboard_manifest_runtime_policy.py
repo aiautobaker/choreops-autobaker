@@ -32,20 +32,23 @@ def _definition(
 def test_merge_manifest_template_definitions_is_deterministic() -> None:
     """Merge keeps local order, applies overrides, and appends remote-only IDs sorted."""
     local = [
-        _definition("user-minimal-v1", required=["ha-card:auto-entities"]),
+        _definition("user-chores-essential-v1", required=["ha-card:auto-entities"]),
         _definition("admin-shared-v1", audience="approver"),
     ]
     remote = [
-        _definition("user-minimal-v1", required=["ha-card:mushroom-template-card"]),
-        _definition("user-gamification-v1"),
+        _definition(
+            "user-chores-essential-v1",
+            required=["ha-card:mushroom-template-card"],
+        ),
+        _definition("user-kidschores-classic-v1"),
     ]
 
     merged = dh.merge_manifest_template_definitions(local, remote)
 
     assert [definition["template_id"] for definition in merged] == [
-        "user-minimal-v1",
+        "user-chores-essential-v1",
         "admin-shared-v1",
-        "user-gamification-v1",
+        "user-kidschores-classic-v1",
     ]
     assert merged[0]["dependencies_required"] == ["ha-card:mushroom-template-card"]
 
@@ -53,14 +56,14 @@ def test_merge_manifest_template_definitions_is_deterministic() -> None:
 def test_nonselectable_template_ids_include_archived_and_unknown() -> None:
     """Archived and missing templates are treated as non-selectable."""
     definitions = [
-        _definition("user-minimal-v1", lifecycle_state="active"),
+        _definition("user-chores-essential-v1", lifecycle_state="active"),
         _definition(
             "admin-peruser-v1", audience="approver", lifecycle_state="archived"
         ),
     ]
 
     nonselectable = dh.get_nonselectable_template_ids_from_definitions(
-        ["user-minimal-v1", "admin-peruser-v1", "unknown-template-v1"],
+        ["user-chores-essential-v1", "admin-peruser-v1", "unknown-template-v1"],
         definitions,
     )
 
@@ -73,8 +76,8 @@ def test_parse_manifest_template_definitions_skips_invalid_remote_records() -> N
         "schema_version": 1,
         "templates": [
             {
-                "template_id": "user-minimal-v1",
-                "display_name": "Minimal",
+                "template_id": "user-chores-essential-v1",
+                "display_name": "Chores Essential",
                 "audience": "user",
                 "category": "minimal",
                 "lifecycle_state": "active",
@@ -82,7 +85,7 @@ def test_parse_manifest_template_definitions_skips_invalid_remote_records() -> N
                 "maintainer": "ccpk1",
                 "source": {
                     "type": "vendored",
-                    "path": "templates/user-minimal-v1.yaml",
+                    "path": "templates/user-chores-essential-v1.yaml",
                 },
                 "dependencies": {
                     "required": [{"id": "ha-card:auto-entities"}],
@@ -90,7 +93,7 @@ def test_parse_manifest_template_definitions_skips_invalid_remote_records() -> N
                 },
             },
             {
-                "template_id": "user-minimal-v1",
+                "template_id": "user-chores-essential-v1",
                 "display_name": "Duplicate",
                 "audience": "user",
                 "category": "minimal",
@@ -99,7 +102,7 @@ def test_parse_manifest_template_definitions_skips_invalid_remote_records() -> N
                 "maintainer": "ccpk1",
                 "source": {
                     "type": "vendored",
-                    "path": "templates/user-minimal-v1.yaml",
+                    "path": "templates/user-chores-essential-v1.yaml",
                 },
                 "dependencies": {
                     "required": [{"id": "ha-card:auto-entities"}],
@@ -125,5 +128,13 @@ def test_parse_manifest_template_definitions_skips_invalid_remote_records() -> N
 
     definitions = dh._parse_manifest_template_definitions(payload)
     assert [definition["template_id"] for definition in definitions] == [
-        "user-minimal-v1"
+        "user-chores-essential-v1"
     ]
+
+
+def test_normalize_template_id_falls_back_to_default_for_unknown_user_id() -> None:
+    """Unknown user template ids fall back to the current default."""
+    assert (
+        dh.normalize_template_id("unknown-template-v1", admin_template=False)
+        == dh.get_default_assignee_template_id()
+    )

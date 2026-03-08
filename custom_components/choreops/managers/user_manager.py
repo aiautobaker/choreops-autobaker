@@ -361,6 +361,9 @@ class UserManager(BaseManager):
         update_only: bool = False,
     ) -> None:
         """Set a UI control value at a nested key path."""
+        if create_only and update_only:
+            raise ValueError("create_only and update_only cannot both be true")
+
         ui_preferences = self._get_ui_preferences_bucket(user_record)
         segments = key_path.split(const.UI_CONTROL_KEY_PATH_DELIMITER)
         current = ui_preferences
@@ -388,13 +391,6 @@ class UserManager(BaseManager):
             raise HomeAssistantError(
                 translation_domain=const.DOMAIN,
                 translation_key=const.TRANS_KEY_ERROR_UI_CONTROL_KEY_ALREADY_EXISTS,
-                translation_placeholders={"key": key_path, "user_name": user_name},
-            )
-
-        if update_only and not leaf_exists:
-            raise HomeAssistantError(
-                translation_domain=const.DOMAIN,
-                translation_key=const.TRANS_KEY_ERROR_UI_CONTROL_KEY_NOT_FOUND,
                 translation_placeholders={"key": key_path, "user_name": user_name},
             )
 

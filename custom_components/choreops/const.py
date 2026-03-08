@@ -2745,9 +2745,6 @@ SERVICE_FIELD_CONFIG_ENTRY_TITLE: Final = "config_entry_title"
 SERVICE_FIELD_USER_NAME: Final = "user_name"
 SERVICE_FIELD_USER_ID: Final = "user_id"
 UI_CONTROL_KEY_PATH_DELIMITER: Final = "/"
-UI_CONTROL_PATH_GAMIFICATION_REWARDS_HEADER_COLLAPSE: Final = (
-    "gamification/rewards/header_collapse"
-)
 SERVICE_FIELD_UI_CONTROL_ACTION: Final = "ui_control_action"
 SERVICE_FIELD_UI_CONTROL_KEY: Final = "key"
 SERVICE_FIELD_UI_CONTROL_VALUE: Final = "value"

@@ -21,7 +21,12 @@ def test_user_templates_include_required_snippet_markers() -> None:
         "template_snippets.user_validation",
     ]
 
-    for template_name in ("user-gamification-v1.yaml", "user-minimal-v1.yaml"):
+    for template_name in (
+        "user-chores-essential-v1.yaml",
+        "user-chores-standard-v1.yaml",
+        "user-gamification-premier-v1.yaml",
+        "user-kidschores-classic-v1.yaml",
+    ):
         content = _read_template(template_name)
         for marker in required_markers:
             assert marker in content
@@ -57,8 +62,10 @@ def test_admin_templates_include_required_snippet_markers() -> None:
 def test_templates_keep_card_header_and_section_markers() -> None:
     """Templates preserve required card-header and numbered-section comments."""
     for template_name in (
-        "user-gamification-v1.yaml",
-        "user-minimal-v1.yaml",
+        "user-chores-essential-v1.yaml",
+        "user-chores-standard-v1.yaml",
+        "user-gamification-premier-v1.yaml",
+        "user-kidschores-classic-v1.yaml",
         "admin-shared-v1.yaml",
         "admin-peruser-v1.yaml",
     ):
@@ -70,11 +77,16 @@ def test_templates_keep_card_header_and_section_markers() -> None:
 
 def test_user_chores_template_uses_button_card_template_contract() -> None:
     """User chores template defines and uses a named button-card row template."""
-    content = _read_template("user-chores-v1.yaml")
+    content = _read_template("user-chores-standard-v1.yaml")
 
     assert "button_card_templates" in content
-    assert "choreops_chore_row_v1" in content
-    assert "'template': 'choreops_chore_row_v1'" in content
+    assert "chore_row_v1" in content
+    assert "chore_row_kids_v1" in content
+    assert "pref_chore_row_variant" in content
+    assert "template_shared.chore_engine/context_v1" in content
+    assert "template_shared.chore_engine/prepare_groups_v1" in content
+    assert "template_shared.chore_engine/header_v1" in content
+    assert "template_shared.chore_engine/group_render_v1" in content
     assert "template_shared.chore_row_user_chores_v1" not in content
 
     legacy_row_helper = TEMPLATES_ROOT / "shared" / "chore_row_user_chores_v1.yaml"

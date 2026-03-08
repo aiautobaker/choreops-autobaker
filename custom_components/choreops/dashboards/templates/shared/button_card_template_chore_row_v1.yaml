@@ -1,4 +1,4 @@
-choreops_chore_row_v1:
+chore_row_v1:
   {
     "type": "custom:button-card",
     "show_name": true,

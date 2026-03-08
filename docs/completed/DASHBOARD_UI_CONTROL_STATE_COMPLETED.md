@@ -237,9 +237,7 @@ Recommended constant names:
 - `DATA_USER_UI_PREFERENCES = "ui_preferences"`
 - `DATA_USER_UI_PREFERENCES*` family for any supporting path/meta constants that prove necessary during implementation
 
-Optional reviewed-path constant for first consumer:
-
-- `UI_CONTROL_PATH_GAMIFICATION_REWARDS_HEADER_COLLAPSE = "gamification/rewards/header_collapse"`
+The key path remains a plain string owned by the consuming template/profile.
 
 #### Dashboard helper key shown to templates
 

@@ -10,6 +10,9 @@ import pytest
 from custom_components.choreops import const
 from tests.helpers import SetupResult, setup_from_yaml
 
+REWARDS_HEADER_COLLAPSE_KEY = "gamification/rewards/header_collapse"
+CHORES_HEADER_COLLAPSE_KEY = "gamification/chores/header_collapse"
+
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
@@ -58,9 +61,7 @@ class TestManageUiControlService:
                 const.SERVICE_FIELD_CONFIG_ENTRY_ID: scenario_full.config_entry.entry_id,
                 const.SERVICE_FIELD_USER_NAME: "Zoë",
                 const.SERVICE_FIELD_UI_CONTROL_ACTION: const.UI_CONTROL_ACTION_CREATE,
-                const.SERVICE_FIELD_UI_CONTROL_KEY: (
-                    const.UI_CONTROL_PATH_GAMIFICATION_REWARDS_HEADER_COLLAPSE
-                ),
+                const.SERVICE_FIELD_UI_CONTROL_KEY: REWARDS_HEADER_COLLAPSE_KEY,
                 const.SERVICE_FIELD_UI_CONTROL_VALUE: True,
             },
             blocking=True,
@@ -72,9 +73,7 @@ class TestManageUiControlService:
         assert response == {
             const.SERVICE_FIELD_USER_ID: user_id,
             const.SERVICE_FIELD_UI_CONTROL_ACTION: const.UI_CONTROL_ACTION_CREATE,
-            const.SERVICE_FIELD_UI_CONTROL_KEY: (
-                const.UI_CONTROL_PATH_GAMIFICATION_REWARDS_HEADER_COLLAPSE
-            ),
+            const.SERVICE_FIELD_UI_CONTROL_KEY: REWARDS_HEADER_COLLAPSE_KEY,
             "cleared_all": False,
             "user_name": "Zoë",
         }
@@ -100,9 +99,7 @@ class TestManageUiControlService:
             {
                 const.SERVICE_FIELD_USER_ID: user_id,
                 const.SERVICE_FIELD_UI_CONTROL_ACTION: const.UI_CONTROL_ACTION_CREATE,
-                const.SERVICE_FIELD_UI_CONTROL_KEY: (
-                    const.UI_CONTROL_PATH_GAMIFICATION_REWARDS_HEADER_COLLAPSE
-                ),
+                const.SERVICE_FIELD_UI_CONTROL_KEY: REWARDS_HEADER_COLLAPSE_KEY,
                 const.SERVICE_FIELD_UI_CONTROL_VALUE: True,
             },
             blocking=True,
@@ -115,9 +112,7 @@ class TestManageUiControlService:
             {
                 const.SERVICE_FIELD_USER_ID: user_id,
                 const.SERVICE_FIELD_UI_CONTROL_ACTION: const.UI_CONTROL_ACTION_UPDATE,
-                const.SERVICE_FIELD_UI_CONTROL_KEY: (
-                    const.UI_CONTROL_PATH_GAMIFICATION_REWARDS_HEADER_COLLAPSE
-                ),
+                const.SERVICE_FIELD_UI_CONTROL_KEY: REWARDS_HEADER_COLLAPSE_KEY,
                 const.SERVICE_FIELD_UI_CONTROL_VALUE: False,
             },
             blocking=True,
@@ -144,6 +139,46 @@ class TestManageUiControlService:
         )
 
     @pytest.mark.asyncio
+    async def test_update_creates_missing_value(
+        self,
+        hass: HomeAssistant,
+        scenario_full: SetupResult,
+    ) -> None:
+        """Update should create the value when it does not yet exist."""
+        user_id = scenario_full.assignee_ids["Zoë"]
+
+        response = await hass.services.async_call(
+            const.DOMAIN,
+            const.SERVICE_MANAGE_UI_CONTROL,
+            {
+                const.SERVICE_FIELD_USER_ID: user_id,
+                const.SERVICE_FIELD_UI_CONTROL_ACTION: const.UI_CONTROL_ACTION_UPDATE,
+                const.SERVICE_FIELD_UI_CONTROL_KEY: CHORES_HEADER_COLLAPSE_KEY,
+                const.SERVICE_FIELD_UI_CONTROL_VALUE: True,
+            },
+            blocking=True,
+            return_response=True,
+        )
+
+        await hass.async_block_till_done()
+
+        assert response[const.SERVICE_FIELD_UI_CONTROL_ACTION] == (
+            const.UI_CONTROL_ACTION_UPDATE
+        )
+        assert (
+            scenario_full.coordinator.assignees_data[user_id][
+                const.DATA_USER_UI_PREFERENCES
+            ]["gamification"]["chores"]["header_collapse"]
+            is True
+        )
+        assert (
+            _get_helper_ui_control(hass, "zoe")["gamification"]["chores"][
+                "header_collapse"
+            ]
+            is True
+        )
+
+    @pytest.mark.asyncio
     async def test_remove_empty_key_clears_all_preferences(
         self,
         hass: HomeAssistant,
@@ -158,9 +193,7 @@ class TestManageUiControlService:
             {
                 const.SERVICE_FIELD_USER_ID: user_id,
                 const.SERVICE_FIELD_UI_CONTROL_ACTION: const.UI_CONTROL_ACTION_CREATE,
-                const.SERVICE_FIELD_UI_CONTROL_KEY: (
-                    const.UI_CONTROL_PATH_GAMIFICATION_REWARDS_HEADER_COLLAPSE
-                ),
+                const.SERVICE_FIELD_UI_CONTROL_KEY: REWARDS_HEADER_COLLAPSE_KEY,
                 const.SERVICE_FIELD_UI_CONTROL_VALUE: True,
             },
             blocking=True,
@@ -188,12 +221,7 @@ class TestManageUiControlService:
             ]
             == {}
         )
-        assert (
-            _get_helper_ui_control(hass, "zoe")["gamification"]["rewards"][
-                "header_collapse"
-            ]
-            is False
-        )
+        assert _get_helper_ui_control(hass, "zoe") == {}
 
     @pytest.mark.asyncio
     async def test_remove_key_clears_targeted_preference(
@@ -210,9 +238,7 @@ class TestManageUiControlService:
             {
                 const.SERVICE_FIELD_USER_ID: user_id,
                 const.SERVICE_FIELD_UI_CONTROL_ACTION: const.UI_CONTROL_ACTION_CREATE,
-                const.SERVICE_FIELD_UI_CONTROL_KEY: (
-                    const.UI_CONTROL_PATH_GAMIFICATION_REWARDS_HEADER_COLLAPSE
-                ),
+                const.SERVICE_FIELD_UI_CONTROL_KEY: REWARDS_HEADER_COLLAPSE_KEY,
                 const.SERVICE_FIELD_UI_CONTROL_VALUE: True,
             },
             blocking=True,
@@ -225,9 +251,7 @@ class TestManageUiControlService:
             {
                 const.SERVICE_FIELD_USER_ID: user_id,
                 const.SERVICE_FIELD_UI_CONTROL_ACTION: const.UI_CONTROL_ACTION_REMOVE,
-                const.SERVICE_FIELD_UI_CONTROL_KEY: (
-                    const.UI_CONTROL_PATH_GAMIFICATION_REWARDS_HEADER_COLLAPSE
-                ),
+                const.SERVICE_FIELD_UI_CONTROL_KEY: REWARDS_HEADER_COLLAPSE_KEY,
             },
             blocking=True,
             return_response=True,
@@ -237,7 +261,7 @@ class TestManageUiControlService:
 
         assert response["cleared_all"] is False
         assert response[const.SERVICE_FIELD_UI_CONTROL_KEY] == (
-            const.UI_CONTROL_PATH_GAMIFICATION_REWARDS_HEADER_COLLAPSE
+            REWARDS_HEADER_COLLAPSE_KEY
         )
         assert (
             scenario_full.coordinator.assignees_data[user_id][
@@ -245,12 +269,7 @@ class TestManageUiControlService:
             ]
             == {}
         )
-        assert (
-            _get_helper_ui_control(hass, "zoe")["gamification"]["rewards"][
-                "header_collapse"
-            ]
-            is False
-        )
+        assert _get_helper_ui_control(hass, "zoe") == {}
 
     @pytest.mark.asyncio
     async def test_requires_user_target(
@@ -265,9 +284,7 @@ class TestManageUiControlService:
                 const.SERVICE_MANAGE_UI_CONTROL,
                 {
                     const.SERVICE_FIELD_UI_CONTROL_ACTION: const.UI_CONTROL_ACTION_CREATE,
-                    const.SERVICE_FIELD_UI_CONTROL_KEY: (
-                        const.UI_CONTROL_PATH_GAMIFICATION_REWARDS_HEADER_COLLAPSE
-                    ),
+                    const.SERVICE_FIELD_UI_CONTROL_KEY: REWARDS_HEADER_COLLAPSE_KEY,
                     const.SERVICE_FIELD_UI_CONTROL_VALUE: True,
                 },
                 blocking=True,

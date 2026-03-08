@@ -102,6 +102,7 @@ _SHARED_TEMPLATE_MARKER_LINE_RE = re.compile(
     r"(?m)^(?P<indent>[ \t]*)<<\s*template_shared\.(?P<fragment_id>[a-zA-Z0-9_./-]+)\s*>>\s*$"
 )
 _TEMPLATE_SHARED_PREFIX = "templates/shared/"
+_PREFERRED_ASSIGNEE_TEMPLATE_ID = "user-chores-standard-v1"
 
 _manifest_template_definitions_state: dict[str, Any] = {
     "cache": (),
@@ -1195,6 +1196,8 @@ def get_dependency_ids_for_templates(
 def get_default_assignee_template_id() -> str:
     """Return default assignee template ID from manifest."""
     assignee_template_ids = get_assignee_template_ids()
+    if _PREFERRED_ASSIGNEE_TEMPLATE_ID in assignee_template_ids:
+        return _PREFERRED_ASSIGNEE_TEMPLATE_ID
     if assignee_template_ids:
         return assignee_template_ids[0]
 

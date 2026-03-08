@@ -1,23 +1,19 @@
-# user-kids-chores-v1 preferences
+# user-chores-essential-v1 preferences
 
-`user-kids-chores-v1` is a kid-focused chores layout based on `user-chores-v1` semantics, with larger, simpler, friendlier button-card tiles.
+`user-chores-essential-v1` is a lightweight, chore-focused layout that keeps the strong grouping and filtering behavior from the earlier essentials path while using compact chore rows.
 
 ## Quick overview
 
-- Keeps baseline color/state/action semantics aligned with the user chores experience.
-- Kid-style tile UX: larger icon and title, simplified status/readout, and clearer tap target.
-- Action model is intentionally simplified: tap to claim/approve when available, hold for more-info.
+- Lightweight by design: focuses on welcome + chores without adding extra dashboard complexity.
+- Portable: the chores card can be copied into other dashboard views as a drop-in block.
+- Portability note: this template is intentionally kept inline for easy copy/paste portability, but inline rendering can hit template-size limits at scale (commonly around ~25 chores, depending on data and labels). See [Known issues / limitations](#known-issues--limitations).
 - Friendly for drag-and-drop workflows: keep defaults for a simple setup, then tune behavior with `pref_*` values.
 - Supports practical organization controls (time buckets, labels, sorting, and state filtering).
 
 ## Card: Chores
 
-- `pref_column_count_mobile` (default: `2`)
-  - Grid columns for chore cards on mobile-width screens (`max-width: 768px`).
-  - Allowed: positive integer.
-
-- `pref_column_count_wide` (default: `5`)
-  - Grid columns for chore cards on wider screens (`min-width: 769px`).
+- `pref_column_count` (default: `3`)
+  - Grid columns for chore cards.
   - Allowed: positive integer.
 
 - `pref_use_overdue_grouping` (default: `true`)
@@ -66,18 +62,25 @@
   - Labels not listed still appear afterward in alphabetical order.
   - Allowed: array of label strings.
 
-- `pref_sort_within_groups` (default: `default`)
+- `pref_sort_within_groups` (default: `by_state_and_date`)
   - Sorting mode inside each rendered group.
   - Allowed: `default`, `name_asc`, `name_desc`, `date_asc`, `date_desc`, `by_state_and_date`.
 
-- `pref_show_chore_description` (default: `false`)
-  - Reserved for compatibility with shared preference patterns.
-  - Kids tile layout keeps the card simplified and does not render description content.
+- `pref_show_chore_description` (default: `true`)
+  - Shows the optional description row when a chore has non-empty description text.
+  - When `false`, the description row is always hidden.
   - Allowed: `true`, `false`.
 
 ## Practical tuning examples
 
-- Keep it kid-simple: keep `pref_column_count_mobile: 2`, `pref_column_count_wide: 5`, and `pref_sort_within_groups: default`.
-- Hide done chores: add `completed` to `pref_exclude_states` (for example `['completed']`) when you want only actionable tiles.
+- Keep it minimal: set only `pref_column_count`, leave everything else as default.
+- Hide done chores: add `completed` to `pref_exclude_states` (for example `['completed']`).
 - Build a label board: set `pref_use_label_grouping: true` and define `pref_label_display_order`.
 - Prioritize urgent work: keep `pref_use_overdue_grouping: true` and use `pref_sort_within_groups: by_state_and_date`.
+
+## Known issues / limitations
+
+- Inline template rendering has a practical size ceiling. With richer chore metadata and labels, this layout can hit Home Assistant template output limits at around ~25 chores.
+- Typical runtime error when this limit is exceeded:
+  - `homeassistant.exceptions.TemplateError: Template output exceeded maximum size of 262144 characters`
+- If you encounter this, reduce rendered chore volume (for example by state/label filters) or move to different template profile.

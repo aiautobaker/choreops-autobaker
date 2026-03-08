@@ -866,6 +866,97 @@ class TestCumulativeBadgeDemotionValues:
             const.ATTR_HIGHEST_EARNED_BADGE_EID
         )
 
+    async def test_cumulative_badges_sensor_hides_badge_level_schedule_dates(
+        self,
+        hass: HomeAssistant,
+        setup_badges,  # noqa: F811
+        monkeypatch,
+    ) -> None:
+        """Hide badge-level reset schedule dates from cumulative badge sensor attrs."""
+        coordinator = setup_badges.coordinator
+        zoe_id = get_assignee_by_name(coordinator, "Zoë")
+        badge_id = get_badge_by_name(coordinator, "Chore Stär Champion")
+
+        badge_data = coordinator.badges_data[badge_id]
+        badge_schedule = badge_data.setdefault(const.DATA_BADGE_RESET_SCHEDULE, {})
+        badge_schedule[const.DATA_BADGE_RESET_SCHEDULE_RECURRING_FREQUENCY] = (
+            const.FREQUENCY_WEEKLY
+        )
+        badge_schedule[const.DATA_BADGE_RESET_SCHEDULE_START_DATE] = "2026-03-01"
+        badge_schedule[const.DATA_BADGE_RESET_SCHEDULE_END_DATE] = "2026-03-07"
+        badge_schedule[const.DATA_BADGE_RESET_SCHEDULE_GRACE_PERIOD_DAYS] = 1
+
+        assignee_data = coordinator.assignees_data[zoe_id]
+        assignee_badges_earned = assignee_data.setdefault(
+            const.DATA_USER_BADGES_EARNED, {}
+        )
+        assignee_badges_earned[badge_id] = {
+            const.DATA_USER_BADGES_EARNED_NAME: badge_data.get(
+                const.DATA_BADGE_NAME, ""
+            ),
+            const.DATA_USER_BADGES_EARNED_LAST_AWARDED: "2026-03-01",
+            const.DATA_USER_BADGES_EARNED_PERIODS: {},
+        }
+
+        original_get_progress = (
+            coordinator.gamification_manager.get_cumulative_badge_progress
+        )
+
+        monkeypatch.setattr(
+            coordinator.gamification_manager,
+            "get_cumulative_badge_progress",
+            lambda assignee_id: (
+                {
+                    const.CUMULATIVE_BADGE_PROGRESS_CURRENT_BADGE_ID: badge_id,
+                    const.CUMULATIVE_BADGE_PROGRESS_CURRENT_BADGE_NAME: badge_data.get(
+                        const.DATA_BADGE_NAME, ""
+                    ),
+                    const.CUMULATIVE_BADGE_PROGRESS_HIGHEST_EARNED_BADGE_ID: badge_id,
+                    const.CUMULATIVE_BADGE_PROGRESS_HIGHEST_EARNED_BADGE_NAME: (
+                        badge_data.get(const.DATA_BADGE_NAME, "")
+                    ),
+                    const.CUMULATIVE_BADGE_PROGRESS_STATUS: (
+                        const.CUMULATIVE_BADGE_STATE_ACTIVE
+                    ),
+                    const.CUMULATIVE_BADGE_PROGRESS_CYCLE_POINTS: 0.0,
+                    const.CUMULATIVE_BADGE_PROGRESS_MAINTENANCE_GRACE_END_DATE: None,
+                    const.DATA_USER_CUMULATIVE_BADGE_PROGRESS_MAINTENANCE_END_DATE: (
+                        "2026-03-08"
+                    ),
+                }
+                if assignee_id == zoe_id
+                else original_get_progress(assignee_id)
+            ),
+        )
+
+        coordinator.async_update_listeners()
+        await hass.async_block_till_done()
+
+        dashboard_eid = get_dashboard_helper_eid(hass, "Zoë")
+        dashboard_state = hass.states.get(dashboard_eid)
+        assert dashboard_state is not None
+        badges_eid = dashboard_state.attributes.get("core_sensors", {}).get(
+            "badges_eid"
+        )
+        assert badges_eid, "Expected badges_eid in dashboard helper core_sensors"
+
+        badges_sensor_state = hass.states.get(badges_eid)
+        assert badges_sensor_state is not None
+
+        reset_schedule = badges_sensor_state.attributes.get(
+            const.DATA_BADGE_RESET_SCHEDULE
+        )
+        assert isinstance(reset_schedule, dict)
+        assert (
+            reset_schedule.get(const.DATA_BADGE_RESET_SCHEDULE_RECURRING_FREQUENCY)
+            == const.FREQUENCY_WEEKLY
+        )
+        assert (
+            reset_schedule.get(const.DATA_BADGE_RESET_SCHEDULE_GRACE_PERIOD_DAYS) == 1
+        )
+        assert const.DATA_BADGE_RESET_SCHEDULE_START_DATE not in reset_schedule
+        assert const.DATA_BADGE_RESET_SCHEDULE_END_DATE not in reset_schedule
+
 
 # ============================================================================
 # SECTION 9: MULTIPLIER TRANSITION VALIDATION

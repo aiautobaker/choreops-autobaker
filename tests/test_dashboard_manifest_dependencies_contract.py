@@ -244,7 +244,7 @@ def test_manifest_parser_rejects_invalid_shared_contract_shapes() -> None:
         template
         for template in templates
         if isinstance(template, dict)
-        and template.get("template_id") == "user-chores-v1"
+        and template.get("template_id") == "user-chores-standard-v1"
     )
 
     missing_version_template = dict(base_template)

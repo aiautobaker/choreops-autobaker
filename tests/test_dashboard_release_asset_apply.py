@@ -26,13 +26,13 @@ def _build_prepared_assets() -> dh.DashboardReleaseAssets:
         "manifest_asset": '{"schema_version": 1, "release_version": "0.5.4", "templates": []}',
         "template_definitions": [],
         "template_assets": {
-            "templates/user-minimal-v1.yaml": "views: []\n",
+            "templates/user-chores-essential-v1.yaml": "views: []\n",
         },
         "translation_assets": {
             "translations/en_dashboard.json": '{"hello": "world"}',
         },
         "preference_assets": {
-            "preferences/user-minimal-v1.md": "# Preferences\n",
+            "preferences/user-chores-essential-v1.md": "# Preferences\n",
         },
     }
 
@@ -63,13 +63,13 @@ def test_replace_managed_dashboard_assets_overwrites_dashboard_folders(
     assert not (dashboards_root / "preferences" / "stale.md").exists()
 
     assert (dashboards_root / "dashboard_registry.json").read_text(encoding="utf-8")
-    assert (dashboards_root / "templates" / "user-minimal-v1.yaml").read_text(
+    assert (dashboards_root / "templates" / "user-chores-essential-v1.yaml").read_text(
         encoding="utf-8"
     ) == "views: []\n"
     assert (dashboards_root / "translations" / "en_dashboard.json").read_text(
         encoding="utf-8"
     ) == '{"hello": "world"}'
-    assert (dashboards_root / "preferences" / "user-minimal-v1.md").read_text(
+    assert (dashboards_root / "preferences" / "user-chores-essential-v1.md").read_text(
         encoding="utf-8"
     ) == "# Preferences\n"
 
@@ -103,7 +103,7 @@ def test_replace_managed_dashboard_assets_preserves_shared_markers_in_templates(
 
     payload = _build_prepared_assets()
     payload["template_assets"] = {
-        "templates/user-minimal-v1.yaml": "start\n<< template_shared.row_v1 >>\nend\n",
+        "templates/user-chores-essential-v1.yaml": "start\n<< template_shared.row_v1 >>\nend\n",
         "templates/shared/row_v1.yaml": "row-content\n",
     }
 
@@ -111,7 +111,7 @@ def test_replace_managed_dashboard_assets_preserves_shared_markers_in_templates(
         payload, component_root=component_root
     )
 
-    assert (dashboards_root / "templates" / "user-minimal-v1.yaml").read_text(
+    assert (dashboards_root / "templates" / "user-chores-essential-v1.yaml").read_text(
         encoding="utf-8"
     ) == "start\n<< template_shared.row_v1 >>\nend\n"
     assert (dashboards_root / "templates" / "shared" / "row_v1.yaml").read_text(
@@ -131,7 +131,7 @@ def test_replace_managed_dashboard_assets_preserves_nested_shared_markers(
 
     payload = _build_prepared_assets()
     payload["template_assets"] = {
-        "templates/user-minimal-v1.yaml": (
+        "templates/user-chores-essential-v1.yaml": (
             "start\n<< template_shared.rows/chore/action_v1 >>\nend\n"
         ),
         "templates/shared/rows/chore/action_v1.yaml": "nested-row-content\n",
@@ -141,7 +141,7 @@ def test_replace_managed_dashboard_assets_preserves_nested_shared_markers(
         payload, component_root=component_root
     )
 
-    assert (dashboards_root / "templates" / "user-minimal-v1.yaml").read_text(
+    assert (dashboards_root / "templates" / "user-chores-essential-v1.yaml").read_text(
         encoding="utf-8"
     ) == "start\n<< template_shared.rows/chore/action_v1 >>\nend\n"
     assert (
@@ -161,7 +161,7 @@ def test_replace_managed_dashboard_assets_preserves_marker_line_indentation(
 
     payload = _build_prepared_assets()
     payload["template_assets"] = {
-        "templates/user-minimal-v1.yaml": (
+        "templates/user-chores-essential-v1.yaml": (
             "button_card_templates:\n  << template_shared.row_v1 >>\nafter: true\n"
         ),
         "templates/shared/row_v1.yaml": "choreops_chore_row_v1:\n  key: value\n",
@@ -171,7 +171,7 @@ def test_replace_managed_dashboard_assets_preserves_marker_line_indentation(
         payload, component_root=component_root
     )
 
-    assert (dashboards_root / "templates" / "user-minimal-v1.yaml").read_text(
+    assert (dashboards_root / "templates" / "user-chores-essential-v1.yaml").read_text(
         encoding="utf-8"
     ) == ("button_card_templates:\n  << template_shared.row_v1 >>\nafter: true\n")
 
@@ -188,7 +188,7 @@ def test_replace_managed_dashboard_assets_fails_on_missing_shared_fragment(
 
     payload = _build_prepared_assets()
     payload["template_assets"] = {
-        "templates/user-minimal-v1.yaml": "<< template_shared.missing_v1 >>\n",
+        "templates/user-chores-essential-v1.yaml": "<< template_shared.missing_v1 >>\n",
     }
 
     with pytest.raises(HomeAssistantError):
@@ -211,8 +211,8 @@ def test_replace_managed_dashboard_assets_fails_when_required_contract_fragment_
     payload = _build_prepared_assets()
     payload["template_definitions"] = [
         {
-            "template_id": "user-minimal-v1",
-            "source_path": "templates/user-minimal-v1.yaml",
+            "template_id": "user-chores-essential-v1",
+            "source_path": "templates/user-chores-essential-v1.yaml",
             "source_type": "vendored",
             "source_ref": None,
             "audience": "user",
@@ -228,7 +228,7 @@ def test_replace_managed_dashboard_assets_fails_when_required_contract_fragment_
         }
     ]
     payload["template_assets"] = {
-        "templates/user-minimal-v1.yaml": "views: []\n",
+        "templates/user-chores-essential-v1.yaml": "views: []\n",
     }
 
     with pytest.raises(HomeAssistantError, match="missing required shared fragment"):
@@ -291,8 +291,8 @@ async def test_prepare_release_assets_fetches_required_shared_fragment_closure(
 
     definitions: list[dh.DashboardTemplateDefinition] = [
         {
-            "template_id": "user-chores-v1",
-            "source_path": "templates/user-chores-v1.yaml",
+            "template_id": "user-chores-standard-v1",
+            "source_path": "templates/user-chores-standard-v1.yaml",
             "source_type": "vendored",
             "source_ref": None,
             "audience": "user",
@@ -303,7 +303,15 @@ async def test_prepare_release_assets_fetches_required_shared_fragment_closure(
             "dependencies_required": [],
             "dependencies_recommended": [],
             "shared_contract_version": 1,
-            "shared_fragments_required": ["button_card_template_user_chores_row_v1"],
+            "shared_fragments_required": [
+                "chore_engine/context_v1",
+                "chore_engine/prepare_groups_v1",
+                "chore_engine/header_v1",
+                "chore_engine/settings_panel_v1",
+                "chore_engine/group_render_v1",
+                "button_card_template_chore_row_v1",
+                "button_card_template_chore_row_kids_v1",
+            ],
             "shared_fragments_optional": [],
         }
     ]
@@ -311,8 +319,22 @@ async def test_prepare_release_assets_fetches_required_shared_fragment_closure(
     fetch_assets_mock = AsyncMock(
         side_effect=[
             {
-                "templates/user-chores-v1.yaml": "main",
-                "templates/shared/button_card_template_user_chores_row_v1.yaml": "frag",
+                "templates/user-chores-standard-v1.yaml": "main",
+                "templates/shared/chore_engine/context_v1.yaml": "engine-context",
+                "templates/shared/chore_engine/prepare_groups_v1.yaml": (
+                    "engine-prepare"
+                ),
+                "templates/shared/chore_engine/header_v1.yaml": "engine-header",
+                "templates/shared/chore_engine/settings_panel_v1.yaml": (
+                    "engine-settings"
+                ),
+                "templates/shared/chore_engine/group_render_v1.yaml": ("engine-render"),
+                "templates/shared/button_card_template_chore_row_v1.yaml": (
+                    "frag-standard"
+                ),
+                "templates/shared/button_card_template_chore_row_kids_v1.yaml": (
+                    "frag-kids"
+                ),
             },
             {"translations/en_dashboard.json": "{}"},
             {},
@@ -340,15 +362,55 @@ async def test_prepare_release_assets_fetches_required_shared_fragment_closure(
         include_prereleases=False,
     )
 
-    assert prepared["template_assets"]["templates/user-chores-v1.yaml"] == "main"
+    assert (
+        prepared["template_assets"]["templates/user-chores-standard-v1.yaml"] == "main"
+    )
+    assert (
+        prepared["template_assets"]["templates/shared/chore_engine/context_v1.yaml"]
+        == "engine-context"
+    )
     assert (
         prepared["template_assets"][
-            "templates/shared/button_card_template_user_chores_row_v1.yaml"
+            "templates/shared/chore_engine/prepare_groups_v1.yaml"
         ]
-        == "frag"
+        == "engine-prepare"
+    )
+    assert (
+        prepared["template_assets"]["templates/shared/chore_engine/header_v1.yaml"]
+        == "engine-header"
+    )
+    assert (
+        prepared["template_assets"][
+            "templates/shared/chore_engine/settings_panel_v1.yaml"
+        ]
+        == "engine-settings"
+    )
+    assert (
+        prepared["template_assets"][
+            "templates/shared/chore_engine/group_render_v1.yaml"
+        ]
+        == "engine-render"
+    )
+    assert (
+        prepared["template_assets"][
+            "templates/shared/button_card_template_chore_row_v1.yaml"
+        ]
+        == "frag-standard"
+    )
+    assert (
+        prepared["template_assets"][
+            "templates/shared/button_card_template_chore_row_kids_v1.yaml"
+        ]
+        == "frag-kids"
     )
     fetched_template_paths = fetch_assets_mock.await_args_list[0].kwargs["source_paths"]
     assert sorted(fetched_template_paths) == [
-        "templates/shared/button_card_template_user_chores_row_v1.yaml",
-        "templates/user-chores-v1.yaml",
+        "templates/shared/button_card_template_chore_row_kids_v1.yaml",
+        "templates/shared/button_card_template_chore_row_v1.yaml",
+        "templates/shared/chore_engine/context_v1.yaml",
+        "templates/shared/chore_engine/group_render_v1.yaml",
+        "templates/shared/chore_engine/header_v1.yaml",
+        "templates/shared/chore_engine/prepare_groups_v1.yaml",
+        "templates/shared/chore_engine/settings_panel_v1.yaml",
+        "templates/user-chores-standard-v1.yaml",
     ]

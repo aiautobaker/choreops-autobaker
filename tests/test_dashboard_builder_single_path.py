@@ -17,7 +17,7 @@ from custom_components.choreops.helpers import (
 
 def _build_template_assets_with_shared_fragment() -> dict[str, str]:
     return {
-        "templates/user-minimal-v1.yaml": (
+        "templates/user-chores-standard-v1.yaml": (
             "button_card_templates:\n"
             "  << template_shared.row_v1 >>\n"
             "views:\n"
@@ -31,8 +31,8 @@ def _build_template_assets_with_shared_fragment() -> dict[str, str]:
 
 def _build_template_definition() -> dh.DashboardTemplateDefinition:
     return {
-        "template_id": "user-minimal-v1",
-        "source_path": "templates/user-minimal-v1.yaml",
+        "template_id": "user-chores-standard-v1",
+        "source_path": "templates/user-chores-standard-v1.yaml",
         "source_type": "vendored",
         "source_ref": None,
         "audience": "user",
@@ -58,7 +58,7 @@ async def test_create_dashboard_prepared_assets_match_release_applied_template_o
     composed_template = dh.compile_prepared_template_assets(
         template_assets,
         template_definitions=[template_definition],
-    )["templates/user-minimal-v1.yaml"]
+    )["templates/user-chores-standard-v1.yaml"]
 
     async def run_create(
         *,
@@ -96,7 +96,7 @@ async def test_create_dashboard_prepared_assets_match_release_applied_template_o
             ),
             patch(
                 "custom_components.choreops.helpers.dashboard_builder.get_template_source_path",
-                return_value="templates/user-minimal-v1.yaml",
+                return_value="templates/user-chores-standard-v1.yaml",
             ),
             patch(
                 "custom_components.choreops.helpers.dashboard_builder.async_get_local_dashboard_release_version",
@@ -124,7 +124,7 @@ async def test_create_dashboard_prepared_assets_match_release_applied_template_o
                 integration_entry_id="entry-123",
                 dashboard_name="Chores",
                 assignee_names=["Zoe"],
-                style="user-minimal-v1",
+                style="user-chores-standard-v1",
                 include_admin=False,
                 prepared_release_assets=prepared_assets,
             )
@@ -158,7 +158,7 @@ async def test_update_dashboard_prepared_assets_match_release_applied_template_o
     composed_template = dh.compile_prepared_template_assets(
         template_assets,
         template_definitions=[template_definition],
-    )["templates/user-minimal-v1.yaml"]
+    )["templates/user-chores-standard-v1.yaml"]
 
     class _FakeDashboard:
         def __init__(self) -> None:
@@ -214,7 +214,7 @@ async def test_update_dashboard_prepared_assets_match_release_applied_template_o
             ),
             patch(
                 "custom_components.choreops.helpers.dashboard_builder.get_template_source_path",
-                return_value="templates/user-minimal-v1.yaml",
+                return_value="templates/user-chores-standard-v1.yaml",
             ),
             patch(
                 "custom_components.choreops.helpers.dashboard_builder.async_get_local_dashboard_release_version",
@@ -230,7 +230,7 @@ async def test_update_dashboard_prepared_assets_match_release_applied_template_o
                 integration_entry_id="entry-123",
                 url_path="kcd-chores",
                 assignee_names=["Zoe"],
-                template_profile="user-minimal-v1",
+                template_profile="user-chores-standard-v1",
                 include_admin=False,
                 prepared_release_assets=prepared_assets,
             )

@@ -292,14 +292,18 @@ Use these as authoritative references for syntax/capability checks:
 
 ```
 choreops-dashboards/templates/
-├── user-gamification-v1.yaml
-├── user-minimal-v1.yaml
+├── user-chores-essential-v1.yaml
+├── user-chores-standard-v1.yaml
+├── user-gamification-premier-v1.yaml
+├── user-kidschores-classic-v1.yaml
 ├── admin-shared-v1.yaml
 └── admin-peruser-v1.yaml
 
 custom_components/choreops/dashboards/templates/
-├── user-gamification-v1.yaml
-├── user-minimal-v1.yaml
+├── user-chores-essential-v1.yaml
+├── user-chores-standard-v1.yaml
+├── user-gamification-premier-v1.yaml
+├── user-kidschores-classic-v1.yaml
 ├── admin-shared-v1.yaml
 └── admin-peruser-v1.yaml
 ```
@@ -669,7 +673,7 @@ import jinja2
 import yaml
 from pathlib import Path
 
-template_path = Path("custom_components/choreops/dashboards/templates/user-gamification-v1.yaml")
+template_path = Path("custom_components/choreops/dashboards/templates/user-gamification-premier-v1.yaml")
 template_str = template_path.read_text()
 
 env = jinja2.Environment(
@@ -768,7 +772,8 @@ Note: Some runtime payload keys still use legacy names for backward compatibilit
 
 ### Dashboard helper UI control fields
 
-The dashboard helper also exposes resolved UI control state for reviewed, dashboard-safe preferences:
+The dashboard helper also exposes the persisted per-user UI control payload for
+dashboard rendering:
 
 | Field        | Type | Description                                                  |
 | ------------ | ---- | ------------------------------------------------------------ |
@@ -778,14 +783,10 @@ Authoring rules:
 
 - Read this surface with `state_attr(dashboard_helper, 'ui_control')`.
 - Treat it as read-only.
-- Use reviewed nested keys only.
 - Treat missing keys as the default UI state.
 - A blank-key `remove` call to `choreops.manage_ui_control` clears all persisted UI preferences for the targeted user, so helper consumers naturally fall back to dashboard defaults on the next refresh.
-- Do not read or rely on raw stored `ui_preferences` from backend storage shape.
-
-Current reviewed path support:
-
-- `gamification/rewards/header_collapse`
+- Keep key naming stable within the template/profile that owns the control.
+- Do not read or rely on backend storage outside this helper attribute.
 
 ### Jinja2 Template Examples
 

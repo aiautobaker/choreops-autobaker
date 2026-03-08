@@ -236,13 +236,13 @@ class TestDashboardHelperUiControl:
         hass: HomeAssistant,
         scenario_minimal: SetupResult,
     ) -> None:
-        """Dashboard helper should expose reviewed defaults when no override exists."""
+        """Dashboard helper should expose an empty payload when no override exists."""
         helper_state = hass.states.get("sensor.zoe_choreops_ui_dashboard_helper")
         assert helper_state is not None
 
         ui_control = helper_state.attributes.get("ui_control")
         assert isinstance(ui_control, dict)
-        assert ui_control["gamification"]["rewards"]["header_collapse"] is False
+        assert ui_control == {}
 
     async def test_ui_control_reflects_persisted_rewards_header_collapse(
         self,

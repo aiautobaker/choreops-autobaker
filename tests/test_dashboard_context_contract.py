@@ -12,7 +12,7 @@ def test_build_dashboard_context_includes_meta_and_snippets() -> None:
         "Zoe",
         assignee_id="user-123",
         integration_entry_id="entry-123",
-        template_profile="user-minimal-v1",
+        template_profile="user-chores-standard-v1",
         release_ref="0.0.1-beta.3",
         generated_at="2026-03-02T00:00:00+00:00",
     )
@@ -21,7 +21,7 @@ def test_build_dashboard_context_includes_meta_and_snippets() -> None:
         context[const.DASHBOARD_CONTEXT_KEY_META][
             const.DASHBOARD_PROVENANCE_KEY_TEMPLATE_ID
         ]
-        == "user-minimal-v1"
+        == "user-chores-standard-v1"
     )
     assert (
         context[const.DASHBOARD_CONTEXT_KEY_META][

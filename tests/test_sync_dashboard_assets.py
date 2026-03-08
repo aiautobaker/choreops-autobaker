@@ -41,7 +41,7 @@ def test_sync_copies_templates_and_shared_directory_byte_identical(
     translations_root.mkdir(parents=True, exist_ok=True)
     preferences_root.mkdir(parents=True, exist_ok=True)
 
-    (templates_root / "user-minimal-v1.yaml").write_text(
+    (templates_root / "user-chores-essential-v1.yaml").write_text(
         "start\n<< template_shared.rows/chore/action_v1 >>\nend\n",
         encoding="utf-8",
     )
@@ -49,14 +49,16 @@ def test_sync_copies_templates_and_shared_directory_byte_identical(
         "nested-row-content\n", encoding="utf-8"
     )
     (translations_root / "en_dashboard.json").write_text("{}", encoding="utf-8")
-    (preferences_root / "user-minimal-v1.md").write_text("# Prefs\n", encoding="utf-8")
+    (preferences_root / "user-chores-essential-v1.md").write_text(
+        "# Prefs\n", encoding="utf-8"
+    )
     (canonical_root / "dashboard_registry.json").write_text(
         '{"schema_version": 1, "templates": []}', encoding="utf-8"
     )
 
     sync_module.sync_assets(canonical_root, vendored_root)
 
-    assert (vendored_root / "templates" / "user-minimal-v1.yaml").read_text(
+    assert (vendored_root / "templates" / "user-chores-essential-v1.yaml").read_text(
         encoding="utf-8"
     ) == "start\n<< template_shared.rows/chore/action_v1 >>\nend\n"
     assert (
@@ -84,7 +86,7 @@ def test_sync_preserves_template_source_with_shared_marker_line(tmp_path: Path) 
     translations_root.mkdir(parents=True, exist_ok=True)
     preferences_root.mkdir(parents=True, exist_ok=True)
 
-    (templates_root / "user-minimal-v1.yaml").write_text(
+    (templates_root / "user-chores-essential-v1.yaml").write_text(
         "button_card_templates:\n  << template_shared.row_v1 >>\nafter: true\n",
         encoding="utf-8",
     )
@@ -93,14 +95,16 @@ def test_sync_preserves_template_source_with_shared_marker_line(tmp_path: Path) 
         encoding="utf-8",
     )
     (translations_root / "en_dashboard.json").write_text("{}", encoding="utf-8")
-    (preferences_root / "user-minimal-v1.md").write_text("# Prefs\n", encoding="utf-8")
+    (preferences_root / "user-chores-essential-v1.md").write_text(
+        "# Prefs\n", encoding="utf-8"
+    )
     (canonical_root / "dashboard_registry.json").write_text(
         '{"schema_version": 1, "templates": []}', encoding="utf-8"
     )
 
     sync_module.sync_assets(canonical_root, vendored_root)
 
-    assert (vendored_root / "templates" / "user-minimal-v1.yaml").read_text(
+    assert (vendored_root / "templates" / "user-chores-essential-v1.yaml").read_text(
         encoding="utf-8"
     ) == "button_card_templates:\n  << template_shared.row_v1 >>\nafter: true\n"
     assert sync_module.parity_diff(canonical_root, vendored_root) == []
@@ -125,18 +129,20 @@ def test_sync_allows_unresolved_shared_marker_in_template_source(
     translations_root.mkdir(parents=True, exist_ok=True)
     preferences_root.mkdir(parents=True, exist_ok=True)
 
-    (templates_root / "user-minimal-v1.yaml").write_text(
+    (templates_root / "user-chores-essential-v1.yaml").write_text(
         "start\n<< template_shared.missing_fragment_v1 >>\nend\n",
         encoding="utf-8",
     )
     (translations_root / "en_dashboard.json").write_text("{}", encoding="utf-8")
-    (preferences_root / "user-minimal-v1.md").write_text("# Prefs\n", encoding="utf-8")
+    (preferences_root / "user-chores-essential-v1.md").write_text(
+        "# Prefs\n", encoding="utf-8"
+    )
     (canonical_root / "dashboard_registry.json").write_text(
         '{"schema_version": 1, "templates": []}', encoding="utf-8"
     )
 
     sync_module.sync_assets(canonical_root, vendored_root)
 
-    assert (vendored_root / "templates" / "user-minimal-v1.yaml").read_text(
+    assert (vendored_root / "templates" / "user-chores-essential-v1.yaml").read_text(
         encoding="utf-8"
     ) == "start\n<< template_shared.missing_fragment_v1 >>\nend\n"
