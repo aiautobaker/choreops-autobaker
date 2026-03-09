@@ -148,6 +148,34 @@ class TestValidation:
 class TestTimeScanCache:
     """Tests for Phase 3 time-scan caching helpers."""
 
+    def test_get_calendar_event_lead_time_uses_due_window_offset(
+        self,
+        chore_manager: ChoreManager,
+        mock_coordinator: MagicMock,
+    ) -> None:
+        """Configured due windows should be reused for calendar lead time."""
+        mock_coordinator.chores_data["chore-1"][const.DATA_CHORE_DUE_WINDOW_OFFSET] = (
+            "2h"
+        )
+
+        assert chore_manager.get_calendar_event_lead_time("chore-1") == timedelta(
+            hours=2
+        )
+
+    def test_get_calendar_event_lead_time_falls_back_to_fifteen_minutes(
+        self,
+        chore_manager: ChoreManager,
+        mock_coordinator: MagicMock,
+    ) -> None:
+        """Disabled due windows should render a short pre-due marker."""
+        mock_coordinator.chores_data["chore-1"][const.DATA_CHORE_DUE_WINDOW_OFFSET] = (
+            "0m"
+        )
+
+        assert chore_manager.get_calendar_event_lead_time("chore-1") == timedelta(
+            minutes=15
+        )
+
     def test_parse_due_datetime_cache_reuses_dt_to_utc(
         self,
         chore_manager: ChoreManager,

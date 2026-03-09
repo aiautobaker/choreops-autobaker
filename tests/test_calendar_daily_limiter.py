@@ -25,12 +25,25 @@ def _build_calendar(duration_days: int) -> AssigneeScheduleCalendar:
 
 def _attach_fake_coordinator(calendar: AssigneeScheduleCalendar) -> None:
     """Attach minimal coordinator data needed by cache revision logic."""
+    fake_manager = type(
+        "FakeChoreManager",
+        (),
+        {
+            "get_calendar_event_start": staticmethod(
+                lambda _chore_id, due_dt: due_dt - datetime.timedelta(hours=2)
+            ),
+            "get_calendar_event_lead_time": staticmethod(
+                lambda _chore_id: datetime.timedelta(hours=2)
+            ),
+        },
+    )()
     calendar.coordinator = type(
         "FakeCoordinator",
         (),
         {
             "chores_data": {},
             "challenges_data": {},
+            "chore_manager": fake_manager,
         },
     )()
 
@@ -96,6 +109,7 @@ def test_event_window_cache_invalidates_when_chore_revision_changes() -> None:
         const.DATA_CHORE_SHOW_ON_CALENDAR: True,
         const.DATA_CHORE_RECURRING_FREQUENCY: const.FREQUENCY_DAILY,
         const.DATA_CHORE_DUE_DATE: "2025-01-01T10:00:00+00:00",
+        const.DATA_CHORE_DUE_WINDOW_OFFSET: "2h",
         const.DATA_CHORE_APPLICABLE_DAYS: [],
     }
 
@@ -118,6 +132,47 @@ def test_event_window_cache_invalidates_when_chore_revision_changes() -> None:
 
     calendar.coordinator.chores_data[chore_id][const.DATA_CHORE_DUE_DATE] = (
         "2025-01-02T10:00:00+00:00"
+    )
+    calendar._get_cached_events(window_start, window_end)
+
+    assert calls["count"] == 2
+
+
+def test_event_window_cache_invalidates_when_due_window_changes() -> None:
+    """Cache revision changes when due window offset changes."""
+    calendar = _build_calendar(90)
+    _attach_fake_coordinator(calendar)
+
+    chore_id = "chore-1"
+    calendar.coordinator.chores_data[chore_id] = {
+        const.DATA_CHORE_INTERNAL_ID: chore_id,
+        const.DATA_CHORE_ASSIGNED_USER_IDS: ["assignee-1"],
+        const.DATA_CHORE_SHOW_ON_CALENDAR: True,
+        const.DATA_CHORE_RECURRING_FREQUENCY: const.FREQUENCY_WEEKLY,
+        const.DATA_CHORE_DUE_DATE: "2025-01-01T10:00:00+00:00",
+        const.DATA_CHORE_DUE_WINDOW_OFFSET: "2h",
+        const.DATA_CHORE_APPLICABLE_DAYS: [],
+    }
+
+    calls: dict[str, int] = {"count": 0}
+
+    def _generate(
+        window_start: datetime.datetime,
+        window_end: datetime.datetime,
+    ) -> list[CalendarEvent]:
+        calls["count"] += 1
+        return []
+
+    calendar._generate_all_events = _generate  # type: ignore[method-assign]
+
+    window_start = datetime.datetime(2025, 1, 1, tzinfo=datetime.UTC)
+    window_end = window_start + datetime.timedelta(days=1)
+
+    calendar._get_cached_events(window_start, window_end)
+    calendar._get_cached_events(window_start, window_end)
+
+    calendar.coordinator.chores_data[chore_id][const.DATA_CHORE_DUE_WINDOW_OFFSET] = (
+        "3h"
     )
     calendar._get_cached_events(window_start, window_end)
 
@@ -248,3 +303,81 @@ def test_daily_multi_is_capped_but_weekly_is_not() -> None:
 
     assert captured_multi["window_end"] == window_start + datetime.timedelta(days=30)
     assert captured_weekly["cutoff"] == window_end
+
+
+def test_non_recurring_due_event_uses_manager_start_and_due_end() -> None:
+    """Timed events render from manager start through due time."""
+    calendar = _build_calendar(30)
+    _attach_fake_coordinator(calendar)
+    due_dt = datetime.datetime(2025, 1, 1, 17, 0, tzinfo=datetime.UTC)
+    window_start = datetime.datetime(2025, 1, 1, 14, 0, tzinfo=datetime.UTC)
+    window_end = datetime.datetime(2025, 1, 1, 18, 0, tzinfo=datetime.UTC)
+    events: list[CalendarEvent] = []
+
+    calendar._generate_non_recurring_with_due_date(
+        events,
+        "chore-1",
+        "Test chore",
+        "",
+        due_dt,
+        window_start,
+        window_end,
+    )
+
+    assert len(events) == 1
+    assert events[0].start == due_dt - datetime.timedelta(hours=2)
+    assert events[0].end == due_dt
+
+
+def test_recurring_due_event_extends_occurrence_query_by_lead_time() -> None:
+    """Recurring timed events query far enough ahead for pre-due spans."""
+    calendar = _build_calendar(30)
+    _attach_fake_coordinator(calendar)
+    due_dt = datetime.datetime(2025, 1, 1, 17, 0, tzinfo=datetime.UTC)
+    window_start = datetime.datetime(2025, 1, 1, 14, 0, tzinfo=datetime.UTC)
+    window_end = datetime.datetime(2025, 1, 1, 16, 0, tzinfo=datetime.UTC)
+    captured: dict[str, datetime.datetime] = {}
+
+    class FakeEngine:
+        def to_rrule_string(self) -> str:
+            return "FREQ=WEEKLY;INTERVAL=1"
+
+        def get_occurrences(
+            self,
+            start: datetime.datetime,
+            end: datetime.datetime,
+            limit: int = 100,
+        ) -> list[datetime.datetime]:
+            captured["start"] = start
+            captured["end"] = end
+            return [due_dt]
+
+    key = (
+        const.FREQUENCY_WEEKLY,
+        1,
+        const.TIME_UNIT_DAYS,
+        (),
+        due_dt.isoformat(),
+    )
+    calendar._recurrence_engine_cache[key] = FakeEngine()  # type: ignore[assignment]
+
+    events: list[CalendarEvent] = []
+    calendar._generate_recurring_with_due_date(
+        events,
+        "chore-1",
+        "Test chore",
+        "",
+        due_dt,
+        const.FREQUENCY_WEEKLY,
+        1,
+        const.TIME_UNIT_DAYS,
+        window_start,
+        window_end,
+        applicable_days=[],
+    )
+
+    assert captured["start"] == window_start
+    assert captured["end"] == window_end + datetime.timedelta(hours=2)
+    assert len(events) == 1
+    assert events[0].start == due_dt - datetime.timedelta(hours=2)
+    assert events[0].end == due_dt

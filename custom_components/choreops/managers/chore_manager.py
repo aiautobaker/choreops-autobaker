@@ -3400,6 +3400,25 @@ class ChoreManager(BaseManager):
 
         return due_dt - due_window_td
 
+    def get_calendar_event_lead_time(self, chore_id: str) -> timedelta:
+        """Return the pre-due lead time used for calendar event rendering."""
+        chore_info: ChoreData | dict[str, Any] = self._coordinator.chores_data.get(
+            chore_id, {}
+        )
+        due_window_offset_str = chore_info.get(
+            const.DATA_CHORE_DUE_WINDOW_OFFSET, const.DEFAULT_DUE_WINDOW_OFFSET
+        )
+        due_window_td = dt_parse_duration(cast("str | None", due_window_offset_str))
+
+        if due_window_td and due_window_td.total_seconds() > 0:
+            return due_window_td
+
+        return timedelta(minutes=15)
+
+    def get_calendar_event_start(self, chore_id: str, due_dt: datetime) -> datetime:
+        """Return the calendar event start for an occurrence ending at due_dt."""
+        return due_dt - self.get_calendar_event_lead_time(chore_id)
+
     def get_pending_chore_approvals(self) -> list[dict[str, Any]]:
         """Compute pending chore approvals dynamically from timestamp data.
 

@@ -117,6 +117,17 @@ class AssigneeScheduleCalendar(CalendarEntity):
         ] = {}
         self._rrule_cache: dict[tuple[str, int, str, tuple[int, ...], str], str] = {}
 
+    def _get_timed_event_bounds(
+        self,
+        chore_id: str,
+        due_dt: datetime.datetime,
+    ) -> tuple[datetime.datetime, datetime.datetime]:
+        """Return start/end bounds for a timed chore event."""
+        event_start = self.coordinator.chore_manager.get_calendar_event_start(
+            chore_id, due_dt
+        )
+        return event_start, due_dt
+
     async def async_added_to_hass(self) -> None:
         """Subscribe to mutation signals that invalidate calendar caches."""
         await super().async_added_to_hass()
@@ -187,6 +198,10 @@ class AssigneeScheduleCalendar(CalendarEntity):
                     const.FREQUENCY_NONE,
                 ),
                 due_date,
+                chore.get(
+                    const.DATA_CHORE_DUE_WINDOW_OFFSET,
+                    const.DEFAULT_DUE_WINDOW_OFFSET,
+                ),
                 chore.get(const.DATA_CHORE_DAILY_MULTI_TIMES, const.SENTINEL_EMPTY),
                 applicable_days,
                 chore.get(const.DATA_CHORE_CUSTOM_INTERVAL, 1),
@@ -345,6 +360,7 @@ class AssigneeScheduleCalendar(CalendarEntity):
     def _generate_non_recurring_with_due_date(
         self,
         events: list[CalendarEvent],
+        chore_id: str,
         summary: str,
         description: str,
         due_dt: datetime.datetime,
@@ -352,15 +368,14 @@ class AssigneeScheduleCalendar(CalendarEntity):
         window_end: datetime.datetime,
     ) -> None:
         """Generate event for non-recurring chore with due date."""
-        if window_start <= due_dt <= window_end:
-            # All chores with due_date create 1-hour timed events
-            e = CalendarEvent(
-                summary=summary,
-                start=due_dt,
-                end=due_dt + datetime.timedelta(hours=1),
-                description=description,
-            )
-            self._add_event_if_overlaps(events, e, window_start, window_end)
+        event_start, event_end = self._get_timed_event_bounds(chore_id, due_dt)
+        e = CalendarEvent(
+            summary=summary,
+            start=event_start,
+            end=event_end,
+            description=description,
+        )
+        self._add_event_if_overlaps(events, e, window_start, window_end)
 
     def _generate_non_recurring_without_due_date(
         self,
@@ -418,6 +433,7 @@ class AssigneeScheduleCalendar(CalendarEntity):
     def _generate_recurring_daily_with_due_date(
         self,
         events: list[CalendarEvent],
+        chore_id: str,
         summary: str,
         description: str,
         due_dt: datetime.datetime,
@@ -425,19 +441,19 @@ class AssigneeScheduleCalendar(CalendarEntity):
         window_end: datetime.datetime,
     ) -> None:
         """Generate event for daily recurring chore with due date."""
-        if window_start <= due_dt <= window_end:
-            # All chores with due_date create 1-hour timed events
-            e = CalendarEvent(
-                summary=summary,
-                start=due_dt,
-                end=due_dt + datetime.timedelta(hours=1),
-                description=description,
-            )
-            self._add_event_if_overlaps(events, e, window_start, window_end)
+        event_start, event_end = self._get_timed_event_bounds(chore_id, due_dt)
+        e = CalendarEvent(
+            summary=summary,
+            start=event_start,
+            end=event_end,
+            description=description,
+        )
+        self._add_event_if_overlaps(events, e, window_start, window_end)
 
     def _generate_recurring_with_due_date(
         self,
         events: list[CalendarEvent],
+        chore_id: str,
         summary: str,
         description: str,
         due_dt: datetime.datetime,
@@ -505,10 +521,16 @@ class AssigneeScheduleCalendar(CalendarEntity):
             rrule_str = engine.to_rrule_string()
             self._rrule_cache[engine_cache_key] = rrule_str
 
+        lead_time = self.coordinator.chore_manager.get_calendar_event_lead_time(
+            chore_id
+        )
+
         # Get all occurrences in the window using engine
         try:
             occurrences = engine.get_occurrences(
-                start=window_start, end=window_end, limit=100
+                start=window_start,
+                end=window_end + lead_time,
+                limit=100,
             )
         except Exception as err:  # pylint: disable=broad-except
             const.LOGGER.warning(
@@ -518,17 +540,19 @@ class AssigneeScheduleCalendar(CalendarEntity):
             )
             return
 
-        # Create 1-hour event for each occurrence
+        # Create pre-due events for each occurrence
         for occurrence_utc in occurrences:
-            if window_start <= occurrence_utc <= window_end:
-                e = CalendarEvent(
-                    summary=summary,
-                    start=occurrence_utc,
-                    end=occurrence_utc + datetime.timedelta(hours=1),
-                    description=description,
-                    rrule=rrule_str or None,
-                )
-                self._add_event_if_overlaps(events, e, window_start, window_end)
+            event_start, event_end = self._get_timed_event_bounds(
+                chore_id, occurrence_utc
+            )
+            e = CalendarEvent(
+                summary=summary,
+                start=event_start,
+                end=event_end,
+                description=description,
+                rrule=rrule_str or None,
+            )
+            self._add_event_if_overlaps(events, e, window_start, window_end)
 
     def _generate_recurring_daily_without_due_date(
         self,
@@ -752,6 +776,7 @@ class AssigneeScheduleCalendar(CalendarEntity):
         """
         events: list[CalendarEvent] = []
 
+        chore_id = chore.get(const.DATA_CHORE_INTERNAL_ID, const.SENTINEL_EMPTY)
         summary = chore.get(
             const.DATA_CHORE_NAME, const.TRANS_KEY_DISPLAY_UNKNOWN_CHORE
         )
@@ -785,7 +810,13 @@ class AssigneeScheduleCalendar(CalendarEntity):
         if recurring == const.FREQUENCY_NONE:
             if due_dt:
                 self._generate_non_recurring_with_due_date(
-                    events, summary, description, due_dt, window_start, window_end
+                    events,
+                    chore_id,
+                    summary,
+                    description,
+                    due_dt,
+                    window_start,
+                    window_end,
                 )
             else:
                 self._generate_non_recurring_without_due_date(
@@ -806,7 +837,13 @@ class AssigneeScheduleCalendar(CalendarEntity):
 
             if recurring == const.FREQUENCY_DAILY:
                 self._generate_recurring_daily_with_due_date(
-                    events, summary, description, due_dt, window_start, window_end
+                    events,
+                    chore_id,
+                    summary,
+                    description,
+                    due_dt,
+                    window_start,
+                    window_end,
                 )
             elif recurring in (
                 const.FREQUENCY_WEEKLY,
@@ -822,6 +859,7 @@ class AssigneeScheduleCalendar(CalendarEntity):
                 )
                 self._generate_recurring_with_due_date(
                     events,
+                    chore_id,
                     summary,
                     description,
                     due_dt,
