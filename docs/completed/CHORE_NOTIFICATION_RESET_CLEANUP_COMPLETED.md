@@ -54,8 +54,7 @@
    - [tests/AGENT_TEST_CREATION_INSTRUCTIONS.md](../../tests/AGENT_TEST_CREATION_INSTRUCTIONS.md)
    - [tests/AGENT_TESTING_USAGE_GUIDE.md](../../tests/AGENT_TESTING_USAGE_GUIDE.md)
    - [docs/RELEASE_CHECKLIST.md](../RELEASE_CHECKLIST.md)
-
-- [docs/completed/CHORE_NOTIFICATION_RESET_CLEANUP_SUP_RESET_PATH_AUDIT.md](CHORE_NOTIFICATION_RESET_CLEANUP_SUP_RESET_PATH_AUDIT.md)
+  - [docs/completed/CHORE_NOTIFICATION_RESET_CLEANUP_SUP_RESET_PATH_AUDIT.md](CHORE_NOTIFICATION_RESET_CLEANUP_SUP_RESET_PATH_AUDIT.md)
 
 - [docs/completed/CHORE_NOTIFICATION_RESET_CLEANUP_SUP_NOTIFICATION_OVERVIEW_MATRIX.md](CHORE_NOTIFICATION_RESET_CLEANUP_SUP_NOTIFICATION_OVERVIEW_MATRIX.md)
 - [docs/completed/CHORE_NOTIFICATION_RESET_CLEANUP_SUP_BUILDER_HANDOFF_PHASE3B.md](CHORE_NOTIFICATION_RESET_CLEANUP_SUP_BUILDER_HANDOFF_PHASE3B.md)
@@ -74,8 +73,7 @@
    - New Phase 3B exists specifically because the deferred tag-family decision is now proven user-visible in production behavior.
    - No `.storage/choreops/choreops_data` schema change is planned for this initiative.
    - No new `TRANS_KEY_*` constants are expected if cleanup remains internal-only; current notification copy should be reused unchanged.
-
-- **Completion confirmation**: `[x]` All follow-up items completed (runtime behavior, tests, docs, validation) before requesting owner approval.
+  - **Completion confirmation**: `[x]` All follow-up items completed (runtime behavior, tests, docs, validation) before requesting owner approval.
 
 > **Important:** Keep the Summary section current after each material implementation or validation update.
 

@@ -227,14 +227,15 @@ The umbrella dashboard modernization program remains active in:
    - Validate invalid/missing target cases raise translated errors.
    - Candidate files: new focused test module under `tests/test_*ui_control*`, plus service-layer contract tests.
 2. [ ] Add/extend sensor tests for new system helper attributes and language derivation.
-2. [x] Run dashboard asset sync and parity verification after template updates.
-3. [x] Run required validation gates:
+3. [x] Run dashboard asset sync and parity verification after template updates.
+4. [x] Run required validation gates:
    - Update `tests/test_dashboard_context_contract.py` for `admin_setup_shared` payload expectations.
    - Update `tests/test_dashboard_template_contract.py` for required shared-admin snippet usage markers.
-4. [ ] Add regression test to lock `admin-shared-v1` root ownership split.
+5. [ ] Add regression test to lock `admin-shared-v1` root ownership split.
    - Assert shared-card controls never read selected-user root and vice versa.
    - Candidate file: `tests/test_dashboard_template_render_smoke.py` or new dedicated admin shared contract test.
    - Full-suite coverage was executed in four 25 percent `python -m pytest` batches per owner instruction, with failures fixed before continuing.
+
 - **Phase 4 evidence**
 
 - `./utils/quick_lint.sh --fix` passed.
@@ -249,6 +250,7 @@ The umbrella dashboard modernization program remains active in:
   - Batch 4: `456 passed`
 - Aggregate release-gate coverage across the four batches: `1665 passed`, `4 skipped`, `2 deselected`.
 - Dashboard asset sync parity remained green after the shared-admin snippet/template refactor.
+
 5. [ ] Run mandatory quality gates and record evidence in main initiative plan.
    - `./utils/quick_lint.sh --fix`
    - `mypy custom_components/choreops/`

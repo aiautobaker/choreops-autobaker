@@ -5,7 +5,7 @@
 - **Name / Code**: Chore notification reset cleanup – Phase 3B (`CHORE_NOTIFICATION_RESET_CLEANUP_PHASE3B`)
 - **Target release / milestone**: `release/0.5.0-beta.5-prep` notification lifecycle hardening
 - **Owner / driver(s)**: Builder execution owner + ChoreOps maintainer reviewer
-- **Status**: Ready for handoff
+- **Status**: Executed and archived with completion evidence captured
 
 ## Handoff purpose
 
@@ -25,8 +25,8 @@ This handoff is complete only when:
 
 Builder must treat these as the only authoritative planning sources for this slice:
 
-- `docs/in-process/CHORE_NOTIFICATION_RESET_CLEANUP_IN-PROCESS.md`
-- `docs/in-process/CHORE_NOTIFICATION_RESET_CLEANUP_SUP_NOTIFICATION_OVERVIEW_MATRIX.md`
+- `docs/completed/CHORE_NOTIFICATION_RESET_CLEANUP_COMPLETED.md`
+- `docs/completed/CHORE_NOTIFICATION_RESET_CLEANUP_SUP_NOTIFICATION_OVERVIEW_MATRIX.md`
 - `choreops-wiki/Configuration:-Notifications.md`
 - `choreops-wiki/Technical:-Notifications.md`
 
@@ -55,8 +55,8 @@ These are not open for reinterpretation during implementation.
   - `tests/test_scheduler_delegation.py`
   - optional focused lifecycle contract test module if needed
 - Plan and documentation updates in:
-  - `docs/in-process/CHORE_NOTIFICATION_RESET_CLEANUP_IN-PROCESS.md`
-  - `docs/in-process/CHORE_NOTIFICATION_RESET_CLEANUP_SUP_NOTIFICATION_OVERVIEW_MATRIX.md`
+  - `docs/completed/CHORE_NOTIFICATION_RESET_CLEANUP_COMPLETED.md`
+  - `docs/completed/CHORE_NOTIFICATION_RESET_CLEANUP_SUP_NOTIFICATION_OVERVIEW_MATRIX.md`
   - `choreops-wiki/Configuration:-Notifications.md`
   - `choreops-wiki/Technical:-Notifications.md`
 
@@ -117,12 +117,12 @@ No deviations recorded yet.
 
 #### Required steps
 
-1. [ ] Add or update the contract note near the Schedule-Lock and assignee lifecycle sections to state the transport rule explicitly:
+1. [x] Add or update the contract note near the Schedule-Lock and assignee lifecycle sections to state the transport rule explicitly:
        transient progression uses `replace`; invalidation without a successor uses `clear`.
-2. [ ] Confirm `due window` send path uses the canonical assignee `status` identity.
-3. [ ] Move `due reminder` into the same canonical assignee `status` identity as due and overdue.
-4. [ ] Confirm `overdue` send path uses that same canonical assignee `status` identity.
-5. [ ] Record exact send identity behavior for these handlers in the main plan or matrix if implementation reveals any mismatch with the current docs.
+2. [x] Confirm `due window` send path uses the canonical assignee `status` identity.
+3. [x] Move `due reminder` into the same canonical assignee `status` identity as due and overdue.
+4. [x] Confirm `overdue` send path uses that same canonical assignee `status` identity.
+5. [x] Record exact send identity behavior for these handlers in the main plan or matrix if implementation reveals any mismatch with the current docs.
 
 #### Acceptance criteria
 
@@ -137,13 +137,13 @@ No deviations recorded yet.
 
 #### Required steps
 
-1. [ ] Audit `_handle_chore_claimed()` invalidation behavior.
-2. [ ] Audit `_handle_chore_approved()` invalidation behavior.
-3. [ ] Audit `_clear_reset_chore_notifications()` invalidation behavior.
-4. [ ] Audit any deletion-related invalidation path touched by this contract slice.
-5. [ ] Make the canonical `status` clear the primary clear path for assignee transient invalidation.
-6. [ ] If legacy `due_window` and `overdue` clears remain, label them in comments and docs as compatibility clears only.
-7. [ ] Ensure approver workflow clears remain logically separate from assignee transient clears.
+1. [x] Audit `_handle_chore_claimed()` invalidation behavior.
+2. [x] Audit `_handle_chore_approved()` invalidation behavior.
+3. [x] Audit `_clear_reset_chore_notifications()` invalidation behavior.
+4. [x] Audit any deletion-related invalidation path touched by this contract slice.
+5. [x] Make the canonical `status` clear the primary clear path for assignee transient invalidation.
+6. [x] If legacy `due_window` and `overdue` clears remain, label them in comments and docs as compatibility clears only.
+7. [x] Ensure approver workflow clears remain logically separate from assignee transient clears.
 
 #### Acceptance criteria
 
@@ -159,9 +159,9 @@ No deviations recorded yet.
 
 #### Required steps
 
-1. [ ] Re-review approver fan-out logic around the approver association check.
-2. [ ] Verify no lifecycle hardening change accidentally broadens approver fan-out.
-3. [ ] Add a negative regression test for the self-role but non-self-associated case.
+1. [x] Re-review approver fan-out logic around the approver association check.
+2. [x] Verify no lifecycle hardening change accidentally broadens approver fan-out.
+3. [x] Add a negative regression test for the self-role but non-self-associated case.
 
 #### Acceptance criteria
 
@@ -177,14 +177,14 @@ No deviations recorded yet.
 
 #### Required cases
 
-1. [ ] Due -> reminder leaves one current assignee transient notification on device.
-2. [ ] Due -> overdue leaves one current assignee transient notification on device.
-3. [ ] Reminder -> overdue leaves only overdue on device.
-4. [ ] Claiming from the earlier due notification clears the later overdue notification from device.
-5. [ ] Approval clears the canonical transient family.
-6. [ ] Reset clears the canonical transient family.
-7. [ ] Self-role but non-self-associated assignee does not receive approver overdue duplicate.
-8. [ ] Tests distinguish `replace` scenarios from `clear` scenarios instead of only asserting disappearance.
+1. [x] Due -> reminder leaves one current assignee transient notification on device.
+2. [x] Due -> overdue leaves one current assignee transient notification on device.
+3. [x] Reminder -> overdue leaves only overdue on device.
+4. [x] Claiming from the earlier due notification clears the later overdue notification from device.
+5. [x] Approval clears the canonical transient family.
+6. [x] Reset clears the canonical transient family.
+7. [x] Self-role but non-self-associated assignee does not receive approver overdue duplicate.
+8. [x] Tests distinguish `replace` scenarios from `clear` scenarios instead of only asserting disappearance.
 
 #### Acceptance criteria
 
@@ -195,19 +195,19 @@ No deviations recorded yet.
 
 - **Goal**: Leave the initiative in a handoff-safe state with no undocumented behavior.
 - **Files**:
-  - `docs/in-process/CHORE_NOTIFICATION_RESET_CLEANUP_IN-PROCESS.md`
-  - `docs/in-process/CHORE_NOTIFICATION_RESET_CLEANUP_SUP_NOTIFICATION_OVERVIEW_MATRIX.md`
+  - `docs/completed/CHORE_NOTIFICATION_RESET_CLEANUP_COMPLETED.md`
+  - `docs/completed/CHORE_NOTIFICATION_RESET_CLEANUP_SUP_NOTIFICATION_OVERVIEW_MATRIX.md`
   - `choreops-wiki/Configuration:-Notifications.md`
   - `choreops-wiki/Technical:-Notifications.md`
 
 #### Required steps
 
-1. [ ] Update the main plan percentages, quick notes, and validation notes after implementation.
-2. [ ] Update the matrix if implementation reveals any compatibility clears or wording refinements.
-3. [ ] Refresh wiki wording so it clearly states:
+1. [x] Update the main plan percentages, quick notes, and validation notes after implementation.
+2. [x] Update the matrix if implementation reveals any compatibility clears or wording refinements.
+3. [x] Refresh wiki wording so it clearly states:
        transient progression uses replacement; invalidation without a successor uses clear.
-4. [ ] Document the persistent fallback scope boundary accurately: keep stable, not a parity target in this slice.
-5. [ ] Record command outputs and pass counts in the main plan and this handoff.
+4. [x] Document the persistent fallback scope boundary accurately: keep stable, not a parity target in this slice.
+5. [x] Record command outputs and pass counts in the main plan and this handoff.
 
 #### Acceptance criteria
 
@@ -243,16 +243,24 @@ Run in `choreops` and record results in this handoff.
 
 ## Acceptance checklist (all must be checked)
 
-- [ ] Package A completed
-- [ ] Package B completed
-- [ ] Package C completed
-- [ ] Package D completed
-- [ ] Package E completed
-- [ ] No unapproved deviations were taken
-- [ ] Any approved deviations are fully documented with impact notes
-- [ ] Main initiative plan updated with current evidence
-- [ ] Matrix artifact updated with any implementation clarifications
-- [ ] Targeted validation commands passed and outputs recorded
+- [x] Package A completed
+- [x] Package B completed
+- [x] Package C completed
+- [x] Package D completed
+- [x] Package E completed
+- [x] No unapproved deviations were taken
+- [x] Any approved deviations are fully documented with impact notes
+- [x] Main initiative plan updated with current evidence
+- [x] Matrix artifact updated with any implementation clarifications
+- [x] Targeted validation commands passed and outputs recorded
+
+## Execution evidence
+
+- `python -m pytest tests/test_workflow_notifications.py -v --tb=line` ✅ (`33 passed`)
+- `python -m pytest tests/test_scheduler_delegation.py -v --tb=line` ✅ (`13 passed`)
+- `./utils/quick_lint.sh --fix` ✅
+- `mypy --config-file mypy_quick.ini --explicit-package-bases custom_components/choreops` ✅ (`Success: no issues found in 51 source files`)
+- `mypy custom_components/choreops/` ⚠️ Workspace parser caveat in `/workspaces/core`; not treated as a ChoreOps type regression for this repo-local gate
 
 ## Builder handback payload (required)
 
@@ -273,9 +281,41 @@ Builder must return all of the following in the handback:
 ## Completion report template (Builder must fill)
 
 1. **What changed**
+
+- `notification_manager.py` now treats assignee due-window, due-reminder, and overdue notifications as one canonical `status` transient family.
+- Claim, approval, reset, and chore deletion now clear the canonical transient family first and retain old `due_window` / `overdue` clears as compatibility behavior.
+- `test_workflow_notifications.py` now includes lifecycle replacement/clear regressions and the self-role non-association negative case.
+- Plan, matrix, and wiki wording now explicitly distinguish `replace` from `clear` and document the persistent fallback scope boundary.
+
 2. **Package status** (`A`, `B`, `C`, `D`, `E`)
+
+- `A`: complete
+- `B`: complete
+- `C`: complete
+- `D`: complete
+- `E`: complete
+
 3. **Canonical contract after implementation**
+
+- `due window` -> `due reminder` -> `overdue` now uses one canonical assignee `status` identity for mobile push replacement.
+- Claim, approval, reset, and chore deletion clear that canonical assignee transient identity explicitly.
+- Legacy `due_window` and `overdue` clears remain compatibility-only.
+
 4. **Validation outputs**
+
+- `33 passed` in `tests/test_workflow_notifications.py`
+- `13 passed` in `tests/test_scheduler_delegation.py`
+- `quick_lint` passed
+- repo-local MyPy passed
+
 5. **Deviation record**
+
+- none
+
 6. **Residual gaps**
+
+- none within Phase 3B scope
+
 7. **Recommendation** (`close Phase 3B` or `continue`)
+
+- close Phase 3B and await owner approval before Phase 4 closeout work
