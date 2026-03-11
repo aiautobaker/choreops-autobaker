@@ -121,9 +121,11 @@ DOC_URL_REWARDS: Final = (
     "https://github.com/ccpk1/choreops/wiki/Configuration%3A-Rewards"
 )
 DOC_URL_MAIN_WIKI: Final = "https://github.com/ccpk1/choreops/wiki"
+DOC_URL_SPONSOR: Final = "https://github.com/sponsors/ccpk1"
 
 # Description Placeholder Keys (for hassfest compliance)
 PLACEHOLDER_DOCUMENTATION_URL: Final = "documentation_url"
+PLACEHOLDER_SPONSOR_URL: Final = "sponsor_url"
 PLACEHOLDER_DASHBOARD_MISSING_REQUIRED_DEPENDENCIES: Final = (
     "dashboard_missing_required_dependencies"
 )
