@@ -57,6 +57,9 @@ def test_admin_templates_include_required_snippet_markers() -> None:
     for marker in peruser_required_markers:
         assert marker in peruser_content
 
+    assert "template_shared.admin_system_administration_links_v1" in shared_content
+    assert "template_shared.admin_system_administration_links_v1" in peruser_content
+
 
 def test_admin_shared_template_keeps_ui_control_ownership_split() -> None:
     """Shared admin template preserves shared-admin and selected-user roots."""

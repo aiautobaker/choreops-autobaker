@@ -345,7 +345,9 @@ SCHEMA_VERSION_STORAGE_ONLY: Final = (
     # Pre-storage-only migrations are hardcoded to produce this version.
 )
 SCHEMA_VERSION_BETA4: Final = 44  # Post-migration schema checkpoint.
-SCHEMA_VERSION_BETA5: Final = 45  # Users capability-model + UI preferences checkpoint.
+SCHEMA_VERSION_BETA5: Final = 45  # Legacy schema45 checkpoint.
+SCHEMA_VERSION_1_0_0: Final = 100  # First GA schema checkpoint.
+SCHEMA_VERSION_CURRENT: Final = SCHEMA_VERSION_1_0_0
 
 # Float precision for stored numeric values (points, chore stats, etc.)
 # Prevents Python float arithmetic drift (e.g., 27.499999999999996 → 27.5)

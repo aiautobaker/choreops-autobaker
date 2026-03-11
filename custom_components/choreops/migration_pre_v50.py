@@ -815,7 +815,7 @@ async def async_apply_schema45_user_contract(
 
     _clear_schema45_challenges_container(data)
 
-    meta[const.DATA_META_SCHEMA_VERSION] = const.SCHEMA_VERSION_BETA5
+    meta[const.DATA_META_SCHEMA_VERSION] = const.SCHEMA_VERSION_CURRENT
 
     summary = {
         "users_migrated": users_migrated,

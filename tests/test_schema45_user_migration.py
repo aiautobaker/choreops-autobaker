@@ -82,7 +82,7 @@ async def test_schema45_migration_moves_assignees_to_users_and_sets_defaults() -
     assert user_data[const.DATA_USER_HA_USER_ID] == "ha-assignee-1"
 
     meta = coordinator._data[const.DATA_META]
-    assert meta[const.DATA_META_SCHEMA_VERSION] == const.SCHEMA_VERSION_BETA5
+    assert meta[const.DATA_META_SCHEMA_VERSION] == const.SCHEMA_VERSION_CURRENT
     assert meta[const.DATA_META_SHARED_ADMIN_UI_CONTROL] == {}
     assert "schema45_user_contract_hook" in meta[const.DATA_META_MIGRATIONS_APPLIED]
     assert (
@@ -97,7 +97,7 @@ async def test_schema45_migration_backfills_shared_admin_bucket_idempotently() -
     coordinator = _DummyCoordinator(
         _data={
             const.DATA_META: {
-                const.DATA_META_SCHEMA_VERSION: const.SCHEMA_VERSION_BETA5,
+                const.DATA_META_SCHEMA_VERSION: const.SCHEMA_VERSION_CURRENT,
                 const.DATA_META_MIGRATIONS_APPLIED: [
                     "schema45_user_contract_hook",
                 ],
@@ -585,5 +585,5 @@ def test_store_default_structure_uses_users_bucket() -> None:
     assert const.DATA_APPROVERS not in default_structure
     assert (
         default_structure[const.DATA_META][const.DATA_META_SCHEMA_VERSION]
-        == const.SCHEMA_VERSION_BETA5
+        == const.SCHEMA_VERSION_CURRENT
     )
