@@ -130,6 +130,7 @@ Prefer the guided steps? See the full [Wiki installation guide](https://github.c
 
 ### Community and contribution
 
+- 🏠 Home Assistant Forum: [ChoreOps Topic](https://community.home-assistant.io/t/choreops-level-up-your-household-tasks/995326)
 - 💬 Community discussion: [GitHub Discussions](https://github.com/ccpk1/choreops/discussions)
 - 🛠️ Issues and feature requests: [GitHub Issues](https://github.com/ccpk1/choreops/issues)
 - 🔀 Contribute: [Pull requests](https://github.com/ccpk1/choreops/pulls)
