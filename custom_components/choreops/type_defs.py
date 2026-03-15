@@ -309,6 +309,7 @@ class ResetApplyContext(TypedDict, total=False):
     decision: ResetDecision
     reschedule_assignee_id: str | None
     allow_reschedule: bool
+    clear_due_date: bool
 
 
 # =============================================================================
@@ -1180,6 +1181,7 @@ class RewardClaimedEvent(TypedDict, total=False):
 
     user_id: str  # Required
     reward_id: str  # Required
+    notif_id: str  # Required for reward notification actions/reminders
     user_name: str  # Required: For notification display
     reward_name: str  # Required
     points: float  # Required: Cost of reward
