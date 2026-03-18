@@ -23,6 +23,7 @@ def test_user_templates_include_required_snippet_markers() -> None:
 
     for template_name in (
         "user-chores-essential-v1.yaml",
+        "user-chores-lite-v1.yaml",
         "user-chores-standard-v1.yaml",
         "user-gamification-premier-v1.yaml",
         "user-kidschores-classic-v1.yaml",
@@ -77,6 +78,7 @@ def test_templates_keep_card_header_and_section_markers() -> None:
     """Templates preserve required card-header and numbered-section comments."""
     for template_name in (
         "user-chores-essential-v1.yaml",
+        "user-chores-lite-v1.yaml",
         "user-chores-standard-v1.yaml",
         "user-gamification-premier-v1.yaml",
         "user-kidschores-classic-v1.yaml",
@@ -104,3 +106,14 @@ def test_user_chores_template_uses_button_card_template_contract() -> None:
 
     legacy_row_helper = TEMPLATES_ROOT / "shared" / "chore_row_user_chores_v1.yaml"
     assert not legacy_row_helper.exists()
+
+
+def test_user_chores_lite_template_uses_native_tile_contract() -> None:
+    """Chores Lite template keeps the native-card-only visible UI contract."""
+    content = _read_template("user-chores-lite-v1.yaml")
+
+    assert "custom:auto-entities" in content
+    assert "'type': 'tile'" in content
+    assert "perform_action': 'button.press'" in content
+    assert "'action': 'more-info'" in content
+    assert "custom:button-card" not in content
