@@ -79,6 +79,7 @@ def set_ha_user_capabilities(
     *,
     can_approve: bool,
     can_manage: bool,
+    associated_user_ids: list[str] | None = None,
 ) -> None:
     """Set capability flags for a user record linked to a Home Assistant user ID."""
     users = coordinator._data.get(const.DATA_USERS, {})
@@ -88,6 +89,8 @@ def set_ha_user_capabilities(
         if user_data_raw.get(const.DATA_USER_HA_USER_ID) == ha_user_id:
             user_data_raw[const.DATA_USER_CAN_APPROVE] = can_approve
             user_data_raw[const.DATA_USER_CAN_MANAGE] = can_manage
+            if associated_user_ids is not None:
+                user_data_raw[const.DATA_USER_ASSOCIATED_USER_IDS] = associated_user_ids
             return
 
     raise AssertionError(f"No user record found for HA user ID: {ha_user_id}")
@@ -410,6 +413,7 @@ class TestAuthorizationAcceptance:
         actor_user_data[const.DATA_USER_HA_USER_ID] = actor_user_id
         actor_user_data[const.DATA_USER_CAN_APPROVE] = True
         actor_user_data[const.DATA_USER_CAN_MANAGE] = False
+        actor_user_data[const.DATA_USER_ASSOCIATED_USER_IDS] = [assignee_id]
 
         with patch.object(
             coordinator.notification_manager, "notify_assignee", new=AsyncMock()
@@ -539,6 +543,7 @@ class TestAuthorizationAcceptance:
         actor_user_data[const.DATA_USER_HA_USER_ID] = actor_user_id
         actor_user_data[const.DATA_USER_CAN_APPROVE] = True
         actor_user_data[const.DATA_USER_CAN_MANAGE] = True
+        actor_user_data[const.DATA_USER_ASSOCIATED_USER_IDS] = [assignee_id]
 
         with patch.object(
             coordinator.notification_manager,
@@ -582,3 +587,50 @@ class TestAuthorizationAcceptance:
         points_after_bonus = get_assignee_points(coordinator, assignee_id)
         bonus_amount = coordinator.bonuses_data[bonus_id][const.DATA_BONUS_POINTS]
         assert points_after_bonus == points_before_bonus + bonus_amount
+
+    @pytest.mark.asyncio
+    async def test_unlinked_approver_cannot_approve_reward(
+        self,
+        hass: HomeAssistant,
+        scenario_full: SetupResult,
+        mock_hass_users: dict[str, Any],
+    ) -> None:
+        """Reward approval requires approval capability and an explicit target link."""
+        coordinator = scenario_full.coordinator
+        assignee_id = scenario_full.assignee_ids["Zoë"]
+        reward_id = scenario_full.reward_ids["Extra Screen Time"]
+        coordinator.assignees_data[assignee_id][DATA_USER_POINTS] = 100.0
+
+        actor_user_internal_id = get_non_target_user_id(coordinator, assignee_id)
+        actor_user_id = mock_hass_users["assignee3"].id
+        actor_context = Context(user_id=actor_user_id)
+        actor_user_data = coordinator._data[const.DATA_USERS][actor_user_internal_id]
+        assert isinstance(actor_user_data, dict)
+        actor_user_data[const.DATA_USER_HA_USER_ID] = actor_user_id
+        actor_user_data[const.DATA_USER_CAN_APPROVE] = True
+        actor_user_data[const.DATA_USER_CAN_MANAGE] = False
+        actor_user_data[const.DATA_USER_ASSOCIATED_USER_IDS] = []
+
+        with patch.object(
+            coordinator.notification_manager,
+            "notify_approvers_translated",
+            new=AsyncMock(),
+        ):
+            await coordinator.reward_manager.redeem(
+                approver_name="Môm Astrid Stârblüm",
+                assignee_id=assignee_id,
+                reward_id=reward_id,
+            )
+
+        with pytest.raises(HomeAssistantError):
+            await hass.services.async_call(
+                const.DOMAIN,
+                const.SERVICE_APPROVE_REWARD,
+                {
+                    const.SERVICE_FIELD_APPROVER_NAME: "Lila",
+                    const.SERVICE_FIELD_USER_NAME: "Zoë",
+                    const.SERVICE_FIELD_REWARD_NAME: "Extra Screen Time",
+                },
+                blocking=True,
+                context=actor_context,
+            )

@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING, Final, Literal
 from .. import const
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from homeassistant.auth.models import User
     from homeassistant.core import HomeAssistant
 
@@ -138,12 +140,64 @@ def _ha_user_ref_matches(user: User, ha_user_ref: str | None) -> bool:
     return ha_user_ref == user.id or normalized_ref == normalized_name
 
 
-def _get_record_ha_user_ref(user_data: dict[str, object]) -> str | None:
+def _get_record_ha_user_ref(user_data: Mapping[str, object]) -> str | None:
     """Return HA user reference from canonical or compatibility keys."""
     for key in (const.DATA_USER_HA_USER_ID,):
         value = user_data.get(key)
         if isinstance(value, str) and value:
             return value
+    return None
+
+
+def _get_associated_user_ids(user_data: Mapping[str, object]) -> set[str]:
+    """Return normalized associated user IDs for a user record."""
+    associated_user_ids = user_data.get(const.DATA_USER_ASSOCIATED_USER_IDS)
+    if not isinstance(associated_user_ids, list):
+        return set()
+
+    return {
+        associated_user_id
+        for associated_user_id in associated_user_ids
+        if isinstance(associated_user_id, str) and associated_user_id
+    }
+
+
+def _get_target_user_aliases(
+    users: dict[str, object],
+    target_user_id: str,
+) -> set[str]:
+    """Return all known identifiers that may refer to the target user."""
+    target_aliases = {target_user_id}
+
+    target_user_data = users.get(target_user_id)
+    if isinstance(target_user_data, dict):
+        internal_id = target_user_data.get(const.DATA_USER_INTERNAL_ID)
+        if isinstance(internal_id, str) and internal_id:
+            target_aliases.add(internal_id)
+
+    for user_key, user_data in users.items():
+        if not isinstance(user_data, dict):
+            continue
+
+        internal_id = user_data.get(const.DATA_USER_INTERNAL_ID)
+        if internal_id == target_user_id:
+            target_aliases.add(user_key)
+
+    return target_aliases
+
+
+def _find_user_record_for_ha_user(
+    users: dict[str, object],
+    user: User,
+) -> dict[str, object] | None:
+    """Return the canonical user record linked to a Home Assistant user."""
+    for user_data in users.values():
+        if not isinstance(user_data, dict):
+            continue
+
+        if _ha_user_ref_matches(user, _get_record_ha_user_ref(user_data)):
+            return user_data
+
     return None
 
 
@@ -224,27 +278,36 @@ async def _has_approval_authority_for_target(
 
     users = coordinator._data.get(const.DATA_USERS, {})
     if isinstance(users, dict) and users:
-        for user_data in users.values():
-            if not isinstance(user_data, dict):
-                continue
-            if _ha_user_ref_matches(
-                user,
-                _get_record_ha_user_ref(user_data),
-            ) and user_data.get(
-                const.DATA_USER_CAN_APPROVE,
-                False,
-            ):
-                return True
+        actor_user_data = _find_user_record_for_ha_user(users, user)
+        if actor_user_data is not None:
+            if not actor_user_data.get(const.DATA_USER_CAN_APPROVE, False):
+                return False
+
+            associated_user_ids = _get_associated_user_ids(actor_user_data)
+            if not associated_user_ids:
+                return False
+
+            target_aliases = _get_target_user_aliases(users, target_user_id)
+            return bool(associated_user_ids & target_aliases)
 
         if _all_users_unlinked(users):
             return True
 
     # Legacy fallback during migration
     for approver_record in coordinator.approvers_data.values():
-        if _ha_user_ref_matches(
+        if not _ha_user_ref_matches(
             user, approver_record.get(const.DATA_USER_HA_USER_ID)
-        ) and approver_record.get(const.DATA_USER_CAN_APPROVE, False):
-            return True
+        ):
+            continue
+
+        if not approver_record.get(const.DATA_USER_CAN_APPROVE, False):
+            return False
+
+        associated_user_ids = _get_associated_user_ids(approver_record)
+        if not associated_user_ids:
+            return False
+
+        return target_user_id in associated_user_ids
 
     return False
 

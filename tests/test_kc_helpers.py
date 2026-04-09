@@ -58,6 +58,7 @@ def _set_user_capabilities(
     *,
     can_approve: bool,
     can_manage: bool,
+    associated_user_ids: list[str] | None = None,
 ) -> None:
     """Set capability flags for the user record linked to an HA user ID."""
 
@@ -82,6 +83,8 @@ def _set_user_capabilities(
         if _record_ha_user_ref(user_data_raw) == ha_user_id:
             user_data_raw[const.DATA_USER_CAN_APPROVE] = can_approve
             user_data_raw[const.DATA_USER_CAN_MANAGE] = can_manage
+            if associated_user_ids is not None:
+                user_data_raw[const.DATA_USER_ASSOCIATED_USER_IDS] = associated_user_ids
             return
 
     raise AssertionError(f"No user record found for HA user ID: {ha_user_id}")
@@ -333,6 +336,25 @@ class TestAuthorizationHelpers:
 
         assert is_authorized is True
 
+    async def test_linked_approver_authorized_for_target_assignee(
+        self,
+        hass: HomeAssistant,
+        scenario_minimal: SetupResult,
+        mock_hass_users: dict[str, Any],
+    ) -> None:
+        """Approver capability only grants approval for explicitly linked assignees."""
+        approver_user = mock_hass_users["approver1"]
+        assignee_id = scenario_minimal.assignee_ids["Zoë"]
+
+        is_authorized = await is_user_authorized_for_action(
+            hass,
+            approver_user.id,
+            AUTH_ACTION_APPROVAL,
+            target_user_id=assignee_id,
+        )
+
+        assert is_authorized is True
+
     async def test_assignee_self_authorization_allows_assignee_scope(
         self,
         hass: HomeAssistant,
@@ -420,6 +442,60 @@ class TestAuthorizationHelpers:
         )
 
         assert is_authorized is False
+
+    async def test_unlinked_approver_denied_assignee_scope(
+        self,
+        hass: HomeAssistant,
+        scenario_minimal: SetupResult,
+        mock_hass_users: dict[str, Any],
+    ) -> None:
+        """Approval capability without a target link should deny approval."""
+        unrelated_assignee_user = mock_hass_users["assignee1"]
+        assignee_id = scenario_minimal.assignee_ids["Zoë"]
+
+        _set_user_capabilities(
+            scenario_minimal,
+            unrelated_assignee_user.id,
+            can_approve=True,
+            can_manage=False,
+            associated_user_ids=[],
+        )
+
+        is_authorized = await is_user_authorized_for_action(
+            hass,
+            unrelated_assignee_user.id,
+            AUTH_ACTION_APPROVAL,
+            target_user_id=assignee_id,
+        )
+
+        assert is_authorized is False
+
+    async def test_explicitly_linked_non_admin_can_approve_target_assignee(
+        self,
+        hass: HomeAssistant,
+        scenario_minimal: SetupResult,
+        mock_hass_users: dict[str, Any],
+    ) -> None:
+        """Any linked user record with approval capability can approve its targets."""
+        linked_assignee_user = mock_hass_users["assignee1"]
+        assignee_id = scenario_minimal.assignee_ids["Zoë"]
+
+        _set_user_capabilities(
+            scenario_minimal,
+            linked_assignee_user.id,
+            can_approve=True,
+            can_manage=False,
+            associated_user_ids=[assignee_id],
+        )
+
+        is_authorized = await is_user_authorized_for_action(
+            hass,
+            linked_assignee_user.id,
+            AUTH_ACTION_APPROVAL,
+            target_user_id=assignee_id,
+        )
+
+        assert is_authorized is True
 
     async def test_kiosk_mode_defaults_to_disabled(
         self,
