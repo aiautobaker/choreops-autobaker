@@ -1296,6 +1296,7 @@ def validate_chore_data(
     *,
     is_update: bool = False,
     current_chore_id: str | None = None,
+    skip_past_due_date_validation: bool = False,
 ) -> dict[str, str]:
     """Validate chore business rules - SINGLE SOURCE OF TRUTH.
 
@@ -1310,6 +1311,8 @@ def validate_chore_data(
         existing_chores: All existing chores for duplicate checking (optional)
         is_update: True if updating existing chore (some validations skip)
         current_chore_id: ID of chore being updated (to exclude from duplicate check)
+        skip_past_due_date_validation: When True, existing due dates may remain in
+            the past during updates as long as they are not being explicitly changed.
 
     Returns:
         Dict of errors: {error_field: translation_key}
@@ -1345,7 +1348,7 @@ def validate_chore_data(
         )
         if not parsed or not isinstance(parsed, datetime.datetime):
             return const.TRANS_KEY_CFOF_INVALID_DUE_DATE
-        if parsed < dt_now_utc():
+        if not skip_past_due_date_validation and parsed < dt_now_utc():
             return const.TRANS_KEY_CFOF_DUE_DATE_IN_PAST
         return None
 

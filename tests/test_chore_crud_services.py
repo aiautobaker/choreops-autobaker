@@ -715,6 +715,43 @@ class TestBulkUpdateChoreSettingsService:
         assert response["failed"][0]["id"] == bad_id
         assert "boom" in response["failed"][0]["error"]
 
+    @pytest.mark.asyncio
+    async def test_bulk_update_allows_notification_toggle_for_overdue_chore(
+        self,
+        hass: HomeAssistant,
+        scenario_full: SetupResult,
+    ) -> None:
+        """Notification-only bulk edits should not fail on already overdue chores."""
+        chore_id = scenario_full.chore_ids["Täke Öut Trash"]
+        chore = scenario_full.coordinator.chores_data[chore_id]
+        chore[const.DATA_CHORE_PER_ASSIGNEE_DUE_DATES] = {
+            scenario_full.assignee_ids["Zoë"]: "2000-01-01T00:00:00+00:00",
+        }
+        chore[const.DATA_CHORE_NOTIFY_ON_OVERDUE] = True
+
+        with patch.object(scenario_full.coordinator, "_persist", new=MagicMock()):
+            response = await hass.services.async_call(
+                DOMAIN,
+                SERVICE_BULK_UPDATE_CHORE_SETTINGS,
+                {
+                    "chore_ids": [chore_id],
+                    "notify_on_overdue": False,
+                },
+                blocking=True,
+                return_response=True,
+            )
+
+        assert response is not None
+        assert response["matched"] == 1
+        assert response["updated_count"] == 1
+        assert response["failed_count"] == 0
+        assert (
+            scenario_full.coordinator.chores_data[chore_id][
+                const.DATA_CHORE_NOTIFY_ON_OVERDUE
+            ]
+            is False
+        )
+
 
 # ============================================================================
 # UPDATE CHORE - E2E TESTS

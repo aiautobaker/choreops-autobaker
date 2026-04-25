@@ -1198,6 +1198,7 @@ def async_setup_services(hass: HomeAssistant):
             coordinator.chores_data,
             is_update=True,
             current_chore_id=chore_id,
+            skip_past_due_date_validation=(due_date_raw is _SERVICE_FIELD_UNSET),
         )
         if validation_errors:
             _error_field, error_key = next(iter(validation_errors.items()))
