@@ -1,21 +1,21 @@
 {
-  "title": "ChoreOps",
+  "title": "Chores Operations",
   "config": {
     "step": {
       "intro": {
-        "title": "Welcome to ChoreOps",
-        "description": "This wizard will guide you through setting up ChoreOps.\n\n ℹ️ [Quick Start Guide]({documentation_url})"
+        "title": "Welcome to Chores Operations",
+        "description": "This wizard will guide you through setting up Chores Operations.\n\n ℹ️ [Quick Start Guide]({documentation_url})"
       },
       "data_recovery": {
         "title": "Data Recovery Options",
-        "description": "Existing ChoreOps data found in:\n{storage_path}\n\nFound {backup_count} backup files.\n\nWhat would you like to do?\n\n ℹ️ [Learn more about Backup & Restore]({documentation_url})",
+        "description": "Existing Chores Operations data found in:\n{storage_path}\n\nFound {backup_count} backup files.\n\nWhat would you like to do?\n\n ℹ️ [Learn more about Backup & Restore]({documentation_url})",
         "data": {
           "backup_selection": "Select Option"
         }
       },
       "paste_json_input": {
         "title": "Import JSON Data",
-        "description": "Paste the complete JSON content from either:\n\n• A ChoreOps data file (choreops_data)\n• A diagnostics download\n\nThe system will automatically detect and unwrap the format as needed. Both raw storage data and diagnostics export formats are supported.",
+        "description": "Paste the complete JSON content from either:\n\n• A Chores Operations data file (choreops_data)\n• A diagnostics download\n\nThe system will automatically detect and unwrap the format as needed. Both raw storage data and diagnostics export formats are supported.",
         "data": {
           "json_data": "JSON Data"
         },
@@ -509,11 +509,11 @@
       "invalid_points_adjust_values": "Invalid points adjust values. Must be a list."
     },
     "abort": {
-      "single_instance_allowed": "Only a single ChoreOps instance can be configured.",
-      "already_configured": "ChoreOps data has been restored successfully. You can now reload the integration.",
+      "single_instance_allowed": "Only a single Chores Operations instance can be configured.",
+      "already_configured": "Chores Operations data has been restored successfully. You can now reload the integration.",
       "file_not_found": "The selected backup file could not be found.",
       "corrupt_file": "The selected file contains invalid JSON and cannot be read.",
-      "invalid_structure": "The selected file is missing required ChoreOps data structure.",
+      "invalid_structure": "The selected file is missing required Chores Operations data structure.",
       "reconfigure_failed": "Reconfiguration failed. Please try again.",
       "reconfigure_successful": "System settings updated successfully."
     }
@@ -521,8 +521,8 @@
   "options": {
     "step": {
       "init": {
-        "title": "ChoreOps Options",
-        "description": "Manage your household operations, gamification engine, and system preferences.\n\n ℹ️ [View Documentation]({documentation_url}) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ❤️ _[Support ChoreOps]({sponsor_url})_",
+        "title": "Chores Operations Options",
+        "description": "Manage your household operations, gamification engine, and system preferences.\n\n ℹ️ [View Documentation]({documentation_url}) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ❤️ _[Support Chores Operations]({sponsor_url})_",
         "data": {
           "menu_selection": "Select an Option"
         }
@@ -548,7 +548,7 @@
       },
       "manage_points": {
         "title": "Edit points settings",
-        "description": "Change the label, icon, and default points per chore used throughout ChoreOps.\n\n ℹ️ [Configuration Guide]({documentation_url})",
+        "description": "Change the label, icon, and default points per chore used throughout Chores Operations.\n\n ℹ️ [Configuration Guide]({documentation_url})",
         "data": {
           "points_label": "Points Label",
           "points_icon": "Points Icon",
@@ -1490,7 +1490,7 @@
       },
       "dashboard_generator": {
         "title": "Dashboard Actions",
-        "description": "Create, update, or delete ChoreOps Lovelace dashboards.\n\n ℹ️ [Dashboard configuration guide]({documentation_url})\n\n{dashboard_status_message}",
+        "description": "Create, update, or delete Chores Operations Lovelace dashboards.\n\n ℹ️ [Dashboard configuration guide]({documentation_url})\n\n{dashboard_status_message}",
         "data": {
           "dashboard_action": "Action",
           "dashboard_release_selection": "Dashboard Release Version"
@@ -1524,7 +1524,7 @@
       },
       "dashboard_update_select": {
         "title": "Update Dashboard",
-        "description": "Select an existing ChoreOps dashboard to update and reconfigure.",
+        "description": "Select an existing Chores Operations dashboard to update and reconfigure.",
         "data": {
           "dashboard_update_selection": "Dashboard to Update"
         },
@@ -1616,7 +1616,7 @@
       },
       "dashboard_delete": {
         "title": "Delete Dashboard",
-        "description": "Select ChoreOps dashboards to delete.\n\n⚠️ This action cannot be undone.",
+        "description": "Select Chores Operations dashboards to delete.\n\n⚠️ This action cannot be undone.",
         "data": {
           "dashboard_update_selection": "Dashboard"
         },
@@ -1631,7 +1631,7 @@
       },
       "manage_general_options": {
         "title": "General Options",
-        "description": "Manage general settings for the ChoreOps integration.\n\n ℹ️ [Learn more about General Options]({documentation_url})",
+        "description": "Manage general settings for the Chores Operations integration.\n\n ℹ️ [Learn more about General Options]({documentation_url})",
         "data": {
           "default_chore_points": "Default Points per Chore",
           "points_adjust_values": "Manual Points Adjustment Button Values",
@@ -1651,7 +1651,7 @@
         "data_description": {
           "default_chore_points": "Default points value used for new chores when custom points are not specified.",
           "points_adjust_values": "List of values for the manual points adjustment buttons. Each value separate by '|'.",
-          "update_interval": "Interval in minutes for updating the internal state of ChoreOps.",
+          "update_interval": "Interval in minutes for updating the internal state of Chores Operations.",
           "calendar_show_period": "Number of days in the future to show scheduled chores and challenges in the calendar.",
           "retention_periods": "Data retention periods in format Daily|Weekly|Monthly|Yearly (e.g., '7|4|12|3'). Each value must be a positive integer.",
           "retention_daily": "Number of days of daily historical data to retain before cleanup. Minimum 1, maximum 90.",
@@ -1667,7 +1667,7 @@
       },
       "backup_actions": {
         "title": "Backup Management",
-        "description": "Manage your ChoreOps data backups. Current status: {backup_count} backups using {storage_size} MB.",
+        "description": "Manage your Chores Operations data backups. Current status: {backup_count} backups using {storage_size} MB.",
         "data": {
           "backup_action_selection": "Select an Action"
         },
@@ -1677,7 +1677,7 @@
       },
       "backup_actions_menu": {
         "title": "Backup Actions",
-        "description": "Manage your ChoreOps data backups.",
+        "description": "Manage your Chores Operations data backups.",
         "data": {
           "backup_action_selection": "Select an Action"
         },
@@ -1687,7 +1687,7 @@
       },
       "create_manual_backup": {
         "title": "Create Manual Backup",
-        "description": "Create a new backup of your ChoreOps data.\n\nCurrent backups: {backup_count}\nRetention setting: {retention} backups",
+        "description": "Create a new backup of your Chores Operations data.\n\nCurrent backups: {backup_count}\nRetention setting: {retention} backups",
         "data": {
           "confirm": "Confirm backup creation"
         }
@@ -1708,14 +1708,14 @@
       },
       "restore_backup": {
         "title": "Data Recovery Options",
-        "description": "Existing ChoreOps data found in:\n{storage_path}\n\nFound {backup_count} backup files.\n\nWhat would you like to do?",
+        "description": "Existing Chores Operations data found in:\n{storage_path}\n\nFound {backup_count} backup files.\n\nWhat would you like to do?",
         "data": {
           "backup_selection": "Select Option"
         }
       },
       "paste_json_restore": {
         "title": "Import JSON Data",
-        "description": "Paste the complete JSON content from either:\n\n• A ChoreOps data file (choreops_data)\n• A diagnostics download\n\nThe system will automatically detect and unwrap the format as needed. Both raw storage data and diagnostics export formats are supported.",
+        "description": "Paste the complete JSON content from either:\n\n• A Chores Operations data file (choreops_data)\n• A diagnostics download\n\nThe system will automatically detect and unwrap the format as needed. Both raw storage data and diagnostics export formats are supported.",
         "data": {
           "json_data": "JSON Data"
         },
@@ -1725,7 +1725,7 @@
       },
       "create_backup_confirm": {
         "title": "Create Manual Backup",
-        "description": "Create a manual backup of your current ChoreOps data?",
+        "description": "Create a manual backup of your current Chores Operations data?",
         "data": {
           "confirm": "Confirm"
         }
@@ -1834,7 +1834,7 @@
       "dashboard_template_error": "Failed to fetch dashboard template. Check network connection or try again later.",
       "dashboard_render_error": "Failed to render dashboard template. This may indicate a template bug.",
       "dashboard_save_error": "Failed to save dashboard to Home Assistant. Check system logs for details.",
-      "dashboard_release_incompatible": "Selected dashboard release is not compatible with your installed ChoreOps version.",
+      "dashboard_release_incompatible": "Selected dashboard release is not compatible with your installed Chores Operations version.",
       "dashboard_no_name": "Please enter a name for the dashboard.",
       "dashboard_no_assignees": "Please select at least one assignee or enable 'Include Admin Tab'.",
       "dashboard_no_dashboards": "Please select at least one dashboard to delete.",
@@ -1872,7 +1872,7 @@
       "no_challenge": "No Challenges are setup for edit. Add one entry first.",
       "setup_complete": "Setup Complete",
       "backup_restored": "Backup restored successfully. The integration has been reloaded with the restored data.",
-      "no_dashboards_to_delete": "No ChoreOps dashboards found. Create one first using Manage Dashboard."
+      "no_dashboards_to_delete": "No Chores Operations dashboards found. Create one first using Manage Dashboard."
     }
   },
   "selector": {
@@ -2136,12 +2136,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "user_name": {
@@ -2162,12 +2162,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "approver_name": {
@@ -2198,12 +2198,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "approver_name": {
@@ -2229,12 +2229,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "approver_name": {
@@ -2260,12 +2260,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "approver_name": {
@@ -2295,12 +2295,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "approver_name": {
@@ -2326,12 +2326,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "approver_name": {
@@ -2357,12 +2357,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "approver_name": {
@@ -2388,12 +2388,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "approver_name": {
@@ -2429,12 +2429,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "name": {
@@ -2470,12 +2470,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "id": {
@@ -2516,12 +2516,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "id": {
@@ -2542,12 +2542,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "name": {
@@ -2643,12 +2643,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "id": {
@@ -2744,12 +2744,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "id": {
@@ -2770,12 +2770,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "chore_id": {
@@ -2806,12 +2806,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "chore_id": {
@@ -2832,12 +2832,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "chore_id": {
@@ -2858,12 +2858,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "user_name": {
@@ -2894,12 +2894,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "user_id": {
@@ -2939,12 +2939,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         }
       }
@@ -2955,12 +2955,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "confirm_destructive": {
@@ -2991,12 +2991,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "chore_id": {
@@ -3022,12 +3022,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "chore_name": {
@@ -3058,12 +3058,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "after": {
@@ -3105,12 +3105,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "chore_id": {
@@ -3145,12 +3145,12 @@
       "fields": {
         "config_entry_id": {
           "name": "Config Entry ID (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup. It targets one specific setup.",
+          "description": "Use this if you have more than one Chores Operations setup. It targets one specific setup.",
           "example": "abc123def456"
         },
         "config_entry_title": {
           "name": "Config Entry Name (Optional)",
-          "description": "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID.",
+          "description": "Use this if you have more than one Chores Operations setup and they each have unique names. If names repeat, use Config Entry ID.",
           "example": "Family Chores"
         },
         "user_name": {
@@ -5094,10 +5094,10 @@
       "message": "UI control key {key} was not found for user {user_name}."
     },
     "service_target_ambiguous": {
-      "message": "Multiple ChoreOps entries are loaded. Provide config_entry_id. Available entries: {available_entries}"
+      "message": "Multiple Chores Operations entries are loaded. Provide config_entry_id. Available entries: {available_entries}"
     },
     "service_target_title_not_found": {
-      "message": "No unique loaded ChoreOps entry found for title {title}. Use config_entry_id instead."
+      "message": "No unique loaded Chores Operations entry found for title {title}. Use config_entry_id instead."
     },
     "dashboard_status_preparing_release_assets": {
       "message": "Preparing selected online dashboard assets"

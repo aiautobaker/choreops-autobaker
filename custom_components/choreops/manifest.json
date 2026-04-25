@@ -1,6 +1,6 @@
 {
   "domain": "choreops",
-  "name": "ChoreOps",
+  "name": "Chores Operations",
   "codeowners": ["@ccpk1"],
   "config_flow": true,
   "dependencies": ["lovelace"],
