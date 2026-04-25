@@ -1281,6 +1281,42 @@ create_chore:
       required: false
       selector:
         text:
+    notify_on_claim:
+      name: "Notify On Claim"
+      description: "Whether to send a notification when this chore is claimed."
+      required: false
+      selector:
+        boolean:
+    notify_on_approval:
+      name: "Notify On Approval"
+      description: "Whether to send a notification when this chore is approved."
+      required: false
+      selector:
+        boolean:
+    notify_on_disapproval:
+      name: "Notify On Disapproval"
+      description: "Whether to send a notification when this chore is disapproved."
+      required: false
+      selector:
+        boolean:
+    notify_on_overdue:
+      name: "Notify On Overdue"
+      description: "Whether to send a notification when this chore becomes overdue."
+      required: false
+      selector:
+        boolean:
+    notify_on_due_window:
+      name: "Notify On Due Window"
+      description: "Whether to send a notification when this chore enters its due window."
+      required: false
+      selector:
+        boolean:
+    notify_due_reminder:
+      name: "Notify Due Reminder"
+      description: "Whether due reminder notifications are enabled for this chore."
+      required: false
+      selector:
+        boolean:
 
 update_chore:
   name: "Update Chore"
@@ -1485,6 +1521,288 @@ update_chore:
       name: "Due Reminder Offset"
       description: "New due reminder offset. Duration before due date to send reminder notification. Format: '30m', '1h', '1d 6h', etc. Use '0' to disable."
       example: "30m"
+      required: false
+      selector:
+        text:
+    notify_on_claim:
+      name: "Notify On Claim"
+      description: "Whether to send a notification when this chore is claimed."
+      required: false
+      selector:
+        boolean:
+    notify_on_approval:
+      name: "Notify On Approval"
+      description: "Whether to send a notification when this chore is approved."
+      required: false
+      selector:
+        boolean:
+    notify_on_disapproval:
+      name: "Notify On Disapproval"
+      description: "Whether to send a notification when this chore is disapproved."
+      required: false
+      selector:
+        boolean:
+    notify_on_overdue:
+      name: "Notify On Overdue"
+      description: "Whether to send a notification when this chore becomes overdue."
+      required: false
+      selector:
+        boolean:
+    notify_on_due_window:
+      name: "Notify On Due Window"
+      description: "Whether to send a notification when this chore enters its due window."
+      required: false
+      selector:
+        boolean:
+    notify_due_reminder:
+      name: "Notify Due Reminder"
+      description: "Whether due reminder notifications are enabled for this chore."
+      required: false
+      selector:
+        boolean:
+
+bulk_update_chore_settings:
+  name: "Bulk Update Chore Settings"
+  description: >
+    Update mutable settings across many chores at once. This service is non-atomic:
+    each matched chore is attempted independently and the response includes both
+    successes and failures. Use chore_ids/chore_names to target explicit chores,
+    user_ids/user_names to filter by assignee, or combine both.
+  fields:
+    config_entry_id:
+      name: "Config Entry ID (Optional)"
+      description: "Use this if you have more than one ChoreOps setup. It targets one specific setup."
+      required: false
+      example: "abc123def456"
+      selector:
+        text:
+    config_entry_title:
+      name: "Config Entry Name (Optional)"
+      description: "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID."
+      required: false
+      example: "Family Chores"
+      selector:
+        text:
+    chore_ids:
+      name: "Chore IDs"
+      description: "Optional list of internal chore IDs to target."
+      required: false
+      selector:
+        text:
+          multiple: true
+    chore_names:
+      name: "Chore Names"
+      description: "Optional list of chore names to target. If omitted, all chores remain eligible before assignee filtering."
+      required: false
+      selector:
+        text:
+          multiple: true
+    user_ids:
+      name: "Assigned User IDs"
+      description: "Optional list of assignee internal IDs. Only chores assigned to at least one of these users will be updated."
+      required: false
+      selector:
+        text:
+          multiple: true
+    user_names:
+      name: "Assigned User Names"
+      description: "Optional list of assignee names. Only chores assigned to at least one of these users will be updated."
+      required: false
+      selector:
+        text:
+          multiple: true
+    points:
+      name: "Points"
+      description: "Set a new points value for all matched chores."
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    description:
+      name: "Description"
+      description: "Set a new description for all matched chores."
+      required: false
+      selector:
+        text:
+          multiline: true
+    icon:
+      name: "Icon"
+      description: "Set a new Material Design icon for all matched chores."
+      required: false
+      selector:
+        icon:
+    labels:
+      name: "Labels"
+      description: "Replace labels on all matched chores."
+      required: false
+      selector:
+        text:
+          multiple: true
+    approval_reset_type:
+      name: "Approval Reset Type"
+      required: false
+      selector:
+        select:
+          options:
+            - "upon_completion"
+            - "at_midnight_once"
+            - "at_midnight_multi"
+            - "at_due_date_once"
+            - "at_due_date_multi"
+    pending_claims:
+      name: "Pending Claims"
+      required: false
+      selector:
+        select:
+          options:
+            - "hold"
+            - "clear"
+            - "auto_approve"
+    overdue_handling:
+      name: "Overdue Handling"
+      required: false
+      selector:
+        select:
+          options:
+            - "never_overdue"
+            - "at_due_date"
+            - "at_due_date_clear_at_approval_reset"
+            - "at_due_date_clear_and_mark_missed"
+            - "at_due_date_clear_immediate_on_late"
+            - "at_due_date_mark_missed_and_lock"
+    claim_lock_until_window:
+      name: "Claim Lock Until Window"
+      required: false
+      selector:
+        boolean:
+    auto_approve:
+      name: "Auto Approve"
+      required: false
+      selector:
+        boolean:
+    due_window_offset:
+      name: "Due Window Offset"
+      description: "Duration before due date when chore enters due window. Use '0' to disable."
+      required: false
+      selector:
+        text:
+    due_reminder_offset:
+      name: "Due Reminder Offset"
+      description: "Duration before due date when reminder should fire. Use '0' to disable."
+      required: false
+      selector:
+        text:
+    notify_on_claim:
+      name: "Notify On Claim"
+      required: false
+      selector:
+        boolean:
+    notify_on_approval:
+      name: "Notify On Approval"
+      required: false
+      selector:
+        boolean:
+    notify_on_disapproval:
+      name: "Notify On Disapproval"
+      required: false
+      selector:
+        boolean:
+    notify_on_overdue:
+      name: "Notify On Overdue"
+      required: false
+      selector:
+        boolean:
+    notify_on_due_window:
+      name: "Notify On Due Window"
+      required: false
+      selector:
+        boolean:
+    notify_due_reminder:
+      name: "Notify Due Reminder"
+      required: false
+      selector:
+        boolean:
+
+list_chores:
+  name: "List Chores"
+  description: >
+    Return a filtered list of chores with IDs, assignees, and a few key fields.
+    Useful for assistant-driven lookup before calling get_chore_details or update services.
+  fields:
+    config_entry_id:
+      name: "Config Entry ID (Optional)"
+      description: "Use this if you have more than one ChoreOps setup. It targets one specific setup."
+      required: false
+      example: "abc123def456"
+      selector:
+        text:
+    config_entry_title:
+      name: "Config Entry Name (Optional)"
+      description: "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID."
+      required: false
+      example: "Family Chores"
+      selector:
+        text:
+    chore_ids:
+      name: "Chore IDs"
+      description: "Optional list of exact chore IDs to include. If omitted, all chores are considered before any user filter."
+      required: false
+      selector:
+        text:
+          multiple: true
+    chore_names:
+      name: "Chore Names"
+      description: "Optional list of chore names to include. Used when you know names but not IDs."
+      required: false
+      selector:
+        text:
+          multiple: true
+    user_ids:
+      name: "User IDs"
+      description: "Optional assignee ID filter. Only chores assigned to any listed assignee are returned."
+      required: false
+      selector:
+        text:
+          multiple: true
+    user_names:
+      name: "User Names"
+      description: "Optional assignee-name filter. Only chores assigned to any listed assignee are returned."
+      required: false
+      selector:
+        text:
+          multiple: true
+
+get_chore_details:
+  name: "Get Chore Details"
+  description: >
+    Return the current stored configuration for one chore, including assignees,
+    recurrence, due-date fields, and notification settings. Use this before
+    assistant-driven edits when you want exact current state.
+  fields:
+    config_entry_id:
+      name: "Config Entry ID (Optional)"
+      description: "Use this if you have more than one ChoreOps setup. It targets one specific setup."
+      required: false
+      example: "abc123def456"
+      selector:
+        text:
+    config_entry_title:
+      name: "Config Entry Name (Optional)"
+      description: "Use this if you have more than one ChoreOps setup and they each have unique names. If names repeat, use Config Entry ID."
+      required: false
+      example: "Family Chores"
+      selector:
+        text:
+    id:
+      name: "Chore ID"
+      description: "Optional internal chore ID. If both id and name are provided, id wins."
+      required: false
+      selector:
+        text:
+    name:
+      name: "Chore Name"
+      description: "Optional chore name lookup. Use when you do not know the internal ID."
       required: false
       selector:
         text:

@@ -37,6 +37,10 @@ from tests.helpers import (
     setup_from_yaml,
 )
 
+SERVICE_BULK_UPDATE_CHORE_SETTINGS = const.SERVICE_BULK_UPDATE_CHORE_SETTINGS
+SERVICE_GET_CHORE_DETAILS = const.SERVICE_GET_CHORE_DETAILS
+SERVICE_LIST_CHORES = const.SERVICE_LIST_CHORES
+
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant, State
 
@@ -599,6 +603,118 @@ class TestUpdateChoreSchemaValidation:
         assert updated_chore[const.DATA_CHORE_CUSTOM_INTERVAL] == 4
         assert updated_chore[const.DATA_CHORE_CUSTOM_INTERVAL_UNIT] == "weeks"
 
+    @pytest.mark.asyncio
+    async def test_accepts_notification_toggle_fields_on_update(
+        self,
+        hass: HomeAssistant,
+        scenario_full: SetupResult,
+    ) -> None:
+        """Test update_chore accepts new notification toggle fields."""
+        chore_id = scenario_full.chore_ids["Täke Öut Trash"]
+
+        with patch.object(scenario_full.coordinator, "_persist", new=MagicMock()):
+            response = await hass.services.async_call(
+                DOMAIN,
+                SERVICE_UPDATE_CHORE,
+                {
+                    "id": chore_id,
+                    "notify_on_claim": False,
+                    "notify_on_overdue": False,
+                    "notify_due_reminder": False,
+                },
+                blocking=True,
+                return_response=True,
+            )
+
+        assert response is not None
+        updated_chore = scenario_full.coordinator.chores_data[chore_id]
+        assert updated_chore[const.DATA_CHORE_NOTIFY_ON_CLAIM] is False
+        assert updated_chore[const.DATA_CHORE_NOTIFY_ON_OVERDUE] is False
+        assert updated_chore[const.DATA_CHORE_NOTIFY_DUE_REMINDER] is False
+
+
+class TestBulkUpdateChoreSettingsService:
+    """Test bulk_update_chore_settings service behavior."""
+
+    @pytest.mark.asyncio
+    async def test_bulk_update_updates_multiple_matching_chores(
+        self,
+        hass: HomeAssistant,
+        scenario_full: SetupResult,
+    ) -> None:
+        """Test bulk service applies mutable settings to multiple chores."""
+        target_ids = [
+            scenario_full.chore_ids["Täke Öut Trash"],
+            scenario_full.chore_ids["Möw Lawn"],
+        ]
+
+        with patch.object(scenario_full.coordinator, "_persist", new=MagicMock()):
+            response = await hass.services.async_call(
+                DOMAIN,
+                SERVICE_BULK_UPDATE_CHORE_SETTINGS,
+                {
+                    "chore_ids": target_ids,
+                    "notify_on_overdue": False,
+                    "due_reminder_offset": "0",
+                },
+                blocking=True,
+                return_response=True,
+            )
+
+        assert response is not None
+        assert response["matched"] == 2
+        assert response["updated_count"] == 2
+        assert response["failed_count"] == 0
+
+        for chore_id in target_ids:
+            updated_chore = scenario_full.coordinator.chores_data[chore_id]
+            assert updated_chore[const.DATA_CHORE_NOTIFY_ON_OVERDUE] is False
+            assert updated_chore[const.DATA_CHORE_DUE_REMINDER_OFFSET] == "0"
+
+    @pytest.mark.asyncio
+    async def test_bulk_update_returns_partial_failures(
+        self,
+        hass: HomeAssistant,
+        scenario_full: SetupResult,
+    ) -> None:
+        """Test bulk service returns per-chore failures without aborting entire batch."""
+        good_id = scenario_full.chore_ids["Täke Öut Trash"]
+        bad_id = scenario_full.chore_ids["Möw Lawn"]
+
+        original_update = scenario_full.coordinator.chore_manager.update_chore
+
+        def flaky_update(chore_id: str, data_input: dict[str, Any]):
+            if chore_id == bad_id:
+                raise HomeAssistantError("boom")
+            return original_update(chore_id, data_input)
+
+        with (
+            patch.object(scenario_full.coordinator, "_persist", new=MagicMock()),
+            patch.object(
+                scenario_full.coordinator.chore_manager,
+                "update_chore",
+                side_effect=flaky_update,
+            ),
+        ):
+            response = await hass.services.async_call(
+                DOMAIN,
+                SERVICE_BULK_UPDATE_CHORE_SETTINGS,
+                {
+                    "chore_ids": [good_id, bad_id],
+                    "notify_on_claim": False,
+                },
+                blocking=True,
+                return_response=True,
+            )
+
+        assert response is not None
+        assert response["matched"] == 2
+        assert response["updated_count"] == 1
+        assert response["failed_count"] == 1
+        assert response["updated"][0]["id"] == good_id
+        assert response["failed"][0]["id"] == bad_id
+        assert "boom" in response["failed"][0]["error"]
+
 
 # ============================================================================
 # UPDATE CHORE - E2E TESTS
@@ -710,6 +826,69 @@ class TestUpdateChoreEndToEnd:
             due_date == new_due_date.isoformat()
             for due_date in per_assignee_due_dates.values()
         )
+
+
+# ============================================================================
+# LIST CHORES - E2E TESTS
+# ============================================================================
+
+
+class TestListChoresService:
+    """Test list_chores service behavior."""
+
+    @pytest.mark.asyncio
+    async def test_list_chores_can_filter_by_assignee(
+        self,
+        hass: HomeAssistant,
+        scenario_full: SetupResult,
+    ) -> None:
+        """Test list_chores returns matching chores for one assignee."""
+        response = await hass.services.async_call(
+            DOMAIN,
+            SERVICE_LIST_CHORES,
+            {"user_names": ["Zoë"]},
+            blocking=True,
+            return_response=True,
+        )
+
+        assert response is not None
+        assert response["count"] >= 1
+        assert any("Zoë" in item["assigned_user_names"] for item in response["chores"])
+
+
+# ============================================================================
+# GET CHORE DETAILS - E2E TESTS
+# ============================================================================
+
+
+class TestGetChoreDetailsService:
+    """Test get_chore_details service behavior."""
+
+    @pytest.mark.asyncio
+    async def test_get_chore_details_returns_current_configuration(
+        self,
+        hass: HomeAssistant,
+        scenario_full: SetupResult,
+    ) -> None:
+        """Test get_chore_details returns assistant-friendly current state."""
+        chore_id = scenario_full.chore_ids["Täke Öut Trash"]
+
+        response = await hass.services.async_call(
+            DOMAIN,
+            SERVICE_GET_CHORE_DETAILS,
+            {"id": chore_id},
+            blocking=True,
+            return_response=True,
+        )
+
+        assert response is not None
+        assert response["id"] == chore_id
+        assert response["name"] == "Täke Öut Trash"
+        assert isinstance(response["assigned_user_names"], list)
+        assert "Zoë" in response["assigned_user_names"]
+        assert "notify_on_claim" in response
+        assert "notify_on_overdue" in response
+        assert "due_reminder_offset" in response
 
 
 # ============================================================================

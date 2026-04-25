@@ -33,6 +33,9 @@ if TYPE_CHECKING:
     from .type_defs import ChoreData
 
 
+_SERVICE_FIELD_UNSET = object()
+
+
 def _get_coordinator_by_entry_id(
     hass: HomeAssistant, entry_id: str
 ) -> "ChoreOpsDataCoordinator":
@@ -807,6 +810,16 @@ CREATE_CHORE_SCHEMA = vol.Schema(
             vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_DUE_REMINDER_OFFSET): vol.All(
                 cv.string, flow_helpers.validate_duration_string
             ),
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_CLAIM): cv.boolean,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_APPROVAL): cv.boolean,
+            vol.Optional(
+                const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_DISAPPROVAL
+            ): cv.boolean,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_OVERDUE): cv.boolean,
+            vol.Optional(
+                const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_DUE_WINDOW
+            ): cv.boolean,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_DUE_REMINDER): cv.boolean,
         }
     )
 )
@@ -871,6 +884,100 @@ UPDATE_CHORE_SCHEMA = vol.Schema(
             vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_DUE_REMINDER_OFFSET): vol.All(
                 cv.string, flow_helpers.validate_duration_string
             ),
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_CLAIM): cv.boolean,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_APPROVAL): cv.boolean,
+            vol.Optional(
+                const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_DISAPPROVAL
+            ): cv.boolean,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_OVERDUE): cv.boolean,
+            vol.Optional(
+                const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_DUE_WINDOW
+            ): cv.boolean,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_DUE_REMINDER): cv.boolean,
+        }
+    )
+)
+
+BULK_UPDATE_CHORE_SETTINGS_SCHEMA = vol.Schema(
+    _with_service_target_fields(
+        {
+            vol.Optional(const.SERVICE_FIELD_CHORE_IDS): vol.All(
+                cv.ensure_list, [cv.string]
+            ),
+            vol.Optional(const.SERVICE_FIELD_CHORE_NAMES): vol.All(
+                cv.ensure_list, [cv.string]
+            ),
+            vol.Optional(const.SERVICE_FIELD_USER_IDS): vol.All(
+                cv.ensure_list, [cv.string]
+            ),
+            vol.Optional(const.SERVICE_FIELD_USER_NAMES): vol.All(
+                cv.ensure_list, [cv.string]
+            ),
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_POINTS): vol.Coerce(float),
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_DESCRIPTION): cv.string,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_ICON): vol.Any(
+                None, "", cv.icon
+            ),
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_LABELS): vol.All(
+                cv.ensure_list, [cv.string]
+            ),
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_APPROVAL_RESET): vol.In(
+                _APPROVAL_RESET_VALUES
+            ),
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_PENDING_CLAIMS): vol.In(
+                _PENDING_CLAIMS_VALUES
+            ),
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_OVERDUE_HANDLING): vol.In(
+                _OVERDUE_HANDLING_VALUES
+            ),
+            vol.Optional(
+                const.SERVICE_FIELD_CHORE_CRUD_CLAIM_LOCK_UNTIL_WINDOW
+            ): cv.boolean,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_AUTO_APPROVE): cv.boolean,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_DUE_WINDOW_OFFSET): vol.All(
+                cv.string, flow_helpers.validate_duration_string
+            ),
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_DUE_REMINDER_OFFSET): vol.All(
+                cv.string, flow_helpers.validate_duration_string
+            ),
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_CLAIM): cv.boolean,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_APPROVAL): cv.boolean,
+            vol.Optional(
+                const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_DISAPPROVAL
+            ): cv.boolean,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_OVERDUE): cv.boolean,
+            vol.Optional(
+                const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_DUE_WINDOW
+            ): cv.boolean,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_DUE_REMINDER): cv.boolean,
+        }
+    )
+)
+
+GET_CHORE_DETAILS_SCHEMA = vol.Schema(
+    _with_service_target_fields(
+        {
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_ID): cv.string,
+            vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_NAME): cv.string,
+        }
+    )
+)
+
+LIST_CHORES_SCHEMA = vol.Schema(
+    _with_service_target_fields(
+        {
+            vol.Optional(const.SERVICE_FIELD_CHORE_IDS): vol.All(
+                cv.ensure_list, [cv.string]
+            ),
+            vol.Optional(const.SERVICE_FIELD_CHORE_NAMES): vol.All(
+                cv.ensure_list, [cv.string]
+            ),
+            vol.Optional(const.SERVICE_FIELD_USER_IDS): vol.All(
+                cv.ensure_list, [cv.string]
+            ),
+            vol.Optional(const.SERVICE_FIELD_USER_NAMES): vol.All(
+                cv.ensure_list, [cv.string]
+            ),
         }
     )
 )
@@ -910,6 +1017,12 @@ _SERVICE_TO_CHORE_DATA_MAPPING: dict[str, str] = {
     const.SERVICE_FIELD_CHORE_CRUD_AUTO_APPROVE: const.DATA_CHORE_AUTO_APPROVE,
     const.SERVICE_FIELD_CHORE_CRUD_DUE_WINDOW_OFFSET: const.DATA_CHORE_DUE_WINDOW_OFFSET,
     const.SERVICE_FIELD_CHORE_CRUD_DUE_REMINDER_OFFSET: const.DATA_CHORE_DUE_REMINDER_OFFSET,
+    const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_CLAIM: const.DATA_CHORE_NOTIFY_ON_CLAIM,
+    const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_APPROVAL: const.DATA_CHORE_NOTIFY_ON_APPROVAL,
+    const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_DISAPPROVAL: const.DATA_CHORE_NOTIFY_ON_DISAPPROVAL,
+    const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_OVERDUE: const.DATA_CHORE_NOTIFY_ON_OVERDUE,
+    const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_ON_DUE_WINDOW: const.DATA_CHORE_NOTIFY_ON_DUE_WINDOW,
+    const.SERVICE_FIELD_CHORE_CRUD_NOTIFY_DUE_REMINDER: const.DATA_CHORE_NOTIFY_DUE_REMINDER,
     # NOTE: due_date is handled specially via set_chore_due_date() hook
 }
 
@@ -999,6 +1112,112 @@ def async_setup_services(hass: HomeAssistant):
     # ========================================================================
     # CHORE SERVICE HANDLERS
     # ========================================================================
+
+    async def _service_update_chore_by_id(
+        coordinator: "ChoreOpsDataCoordinator",
+        chore_id: str,
+        service_data: dict[str, Any],
+    ) -> tuple[dict[str, Any], bool]:
+        """Apply shared update-chore logic for one resolved chore ID."""
+        from . import data_builders as db
+        from .data_builders import EntityValidationError
+
+        if chore_id not in coordinator.chores_data:
+            raise HomeAssistantError(
+                translation_domain=const.DOMAIN,
+                translation_key=const.TRANS_KEY_ERROR_CHORE_NOT_FOUND,
+                translation_placeholders={const.SERVICE_FIELD_CHORE_CRUD_ID: chore_id},
+            )
+
+        existing_chore = coordinator.chores_data[chore_id]
+        service_data = dict(service_data)
+
+        chore_name = service_data.get(const.SERVICE_FIELD_CHORE_CRUD_NAME)
+        if not service_data.get(const.SERVICE_FIELD_CHORE_CRUD_ID) and chore_name:
+            service_data.pop(const.SERVICE_FIELD_CHORE_CRUD_NAME, None)
+
+        assignee_names = service_data.get(
+            const.SERVICE_FIELD_CHORE_CRUD_ASSIGNED_USER_NAMES
+        )
+        if assignee_names is None and (
+            const.SERVICE_FIELD_CHORE_CRUD_ASSIGNED_USER_IDS in service_data
+        ):
+            assignee_names = service_data[
+                const.SERVICE_FIELD_CHORE_CRUD_ASSIGNED_USER_IDS
+            ]
+
+        if assignee_names is not None:
+            assignee_ids = []
+            for assignee_name in assignee_names:
+                try:
+                    assignee_id = get_item_id_or_raise(
+                        coordinator,
+                        const.ITEM_TYPE_USER,
+                        assignee_name,
+                        role=const.ROLE_ASSIGNEE,
+                    )
+                    assignee_ids.append(assignee_id)
+                except HomeAssistantError as err:
+                    const.LOGGER.warning(
+                        "Update Chore - assignee lookup failed: %s", err
+                    )
+                    raise
+            service_data[const.SERVICE_FIELD_CHORE_CRUD_ASSIGNED_USER_IDS] = assignee_ids
+
+        data_input = _map_service_to_data_keys(service_data, _SERVICE_TO_CHORE_DATA_MAPPING)
+
+        due_date_raw = service_data.get(
+            const.SERVICE_FIELD_CHORE_CRUD_DUE_DATE,
+            _SERVICE_FIELD_UNSET,
+        )
+        due_date_iso = (
+            _normalize_service_due_date_input(due_date_raw)
+            if due_date_raw is not _SERVICE_FIELD_UNSET
+            else None
+        )
+
+        assigned_assignee_ids = list(
+            data_input.get(
+                const.DATA_CHORE_ASSIGNED_USER_IDS,
+                existing_chore.get(const.DATA_CHORE_ASSIGNED_USER_IDS, []),
+            )
+        )
+        assignments_changed = const.DATA_CHORE_ASSIGNED_USER_IDS in data_input and set(
+            assigned_assignee_ids
+        ) != set(existing_chore.get(const.DATA_CHORE_ASSIGNED_USER_IDS, []))
+
+        validation_data = _build_service_chore_validation_data(
+            data_input,
+            assigned_assignee_ids,
+            due_date_iso=due_date_iso,
+            existing_chore=existing_chore,
+        )
+
+        validation_errors = db.validate_chore_data(
+            validation_data,
+            coordinator.chores_data,
+            is_update=True,
+            current_chore_id=chore_id,
+        )
+        if validation_errors:
+            _error_field, error_key = next(iter(validation_errors.items()))
+            raise HomeAssistantError(
+                translation_domain=const.DOMAIN,
+                translation_key=error_key,
+            )
+
+        try:
+            chore_dict = coordinator.chore_manager.update_chore(chore_id, data_input)
+            if due_date_raw is not _SERVICE_FIELD_UNSET:
+                await coordinator.chore_manager.set_due_date(
+                    chore_id, due_date_raw, assignee_id=None
+                )
+            return chore_dict, assignments_changed
+        except EntityValidationError as err:
+            raise HomeAssistantError(
+                translation_domain=const.DOMAIN,
+                translation_key=err.translation_key,
+            ) from err
 
     async def handle_create_chore(call: ServiceCall) -> dict[str, Any]:
         """Handle assigneeschores.create_chore service call.
@@ -1164,9 +1383,6 @@ def async_setup_services(hass: HomeAssistant):
             HomeAssistantError: If chore not found, validation fails, or neither
                 chore_id nor name provided
         """
-        from . import data_builders as db
-        from .data_builders import EntityValidationError
-
         entry_id = _resolve_target_entry_id(hass, dict(call.data))
         if not entry_id:
             raise HomeAssistantError(
@@ -1176,11 +1392,9 @@ def async_setup_services(hass: HomeAssistant):
 
         coordinator = _get_coordinator_by_entry_id(hass, entry_id)
 
-        # Resolve chore: either chore_id or name must be provided
         chore_id = call.data.get(const.SERVICE_FIELD_CHORE_CRUD_ID)
         chore_name = call.data.get(const.SERVICE_FIELD_CHORE_CRUD_NAME)
 
-        # If name provided without chore_id, look up the ID
         if not chore_id and chore_name:
             try:
                 chore_id = get_item_id_or_raise(
@@ -1190,7 +1404,180 @@ def async_setup_services(hass: HomeAssistant):
                 const.LOGGER.warning("Update Chore: %s", err)
                 raise
 
-        # Validate we have a chore_id at this point
+        if not chore_id:
+            raise HomeAssistantError(
+                translation_domain=const.DOMAIN,
+                translation_key=const.TRANS_KEY_ERROR_MISSING_CHORE_IDENTIFIER,
+            )
+
+        try:
+            chore_dict, assignments_changed = await _service_update_chore_by_id(
+                coordinator,
+                chore_id,
+                dict(call.data),
+            )
+
+            const.LOGGER.info(
+                "Service updated chore '%s' with ID: %s",
+                chore_dict[const.DATA_CHORE_NAME],
+                chore_id,
+            )
+
+            if assignments_changed:
+                await coordinator.async_sync_entities_after_service_create()
+
+            return {const.SERVICE_FIELD_CHORE_CRUD_ID: chore_id}
+        except HomeAssistantError:
+            raise
+
+    hass.services.async_register(
+        const.DOMAIN,
+        const.SERVICE_UPDATE_CHORE,
+        handle_update_chore,
+        schema=UPDATE_CHORE_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+
+    async def handle_bulk_update_chore_settings(
+        call: ServiceCall,
+    ) -> dict[str, Any]:
+        """Handle bulk settings updates for one or more chores."""
+        entry_id = _resolve_target_entry_id(hass, dict(call.data))
+        if not entry_id:
+            raise HomeAssistantError(
+                translation_domain=const.DOMAIN,
+                translation_key=const.TRANS_KEY_ERROR_MSG_NO_ENTRY_FOUND,
+            )
+
+        coordinator = _get_coordinator_by_entry_id(hass, entry_id)
+        call_data = dict(call.data)
+
+        chore_filter_fields = (
+            const.SERVICE_FIELD_CHORE_IDS,
+            const.SERVICE_FIELD_CHORE_NAMES,
+            const.SERVICE_FIELD_USER_IDS,
+            const.SERVICE_FIELD_USER_NAMES,
+        )
+        setting_fields = [
+            field
+            for field in _SERVICE_TO_CHORE_DATA_MAPPING
+            if field
+            not in {
+                const.SERVICE_FIELD_CHORE_CRUD_ID,
+                const.SERVICE_FIELD_CHORE_CRUD_NAME,
+                const.SERVICE_FIELD_CHORE_CRUD_ASSIGNED_USER_IDS,
+                const.SERVICE_FIELD_CHORE_CRUD_COMPLETION_CRITERIA,
+                const.SERVICE_FIELD_CHORE_CRUD_FREQUENCY,
+                const.SERVICE_FIELD_CHORE_CRUD_CUSTOM_INTERVAL,
+                const.SERVICE_FIELD_CHORE_CRUD_CUSTOM_INTERVAL_UNIT,
+                const.SERVICE_FIELD_CHORE_CRUD_APPLICABLE_DAYS,
+            }
+        ]
+
+        if not any(call_data.get(field) for field in chore_filter_fields):
+            raise HomeAssistantError(
+                "bulk_update_chore_settings requires at least one chore or user selector"
+            )
+
+        if not any(field in call_data for field in setting_fields):
+            raise HomeAssistantError(
+                "bulk_update_chore_settings requires at least one mutable setting field"
+            )
+
+        if call_data.get(const.SERVICE_FIELD_CHORE_IDS) or call_data.get(
+            const.SERVICE_FIELD_CHORE_NAMES
+        ):
+            target_chore_ids = _resolve_service_chore_ids(coordinator, call_data)
+        else:
+            target_chore_ids = list(coordinator.chores_data.keys())
+
+        filter_user_ids = _resolve_service_user_ids(coordinator, call_data)
+        if filter_user_ids:
+            filter_user_id_set = set(filter_user_ids)
+            target_chore_ids = [
+                chore_id
+                for chore_id in target_chore_ids
+                if filter_user_id_set.intersection(
+                    coordinator.chores_data.get(chore_id, {}).get(
+                        const.DATA_CHORE_ASSIGNED_USER_IDS, []
+                    )
+                )
+            ]
+
+        setting_payload = {
+            key: value for key, value in call_data.items() if key in setting_fields
+        }
+
+        updated: list[dict[str, str]] = []
+        failed: list[dict[str, str]] = []
+
+        for chore_id in target_chore_ids:
+            chore_name = str(
+                coordinator.chores_data.get(chore_id, {}).get(
+                    const.DATA_CHORE_NAME, chore_id
+                )
+            )
+            try:
+                await _service_update_chore_by_id(
+                    coordinator,
+                    chore_id,
+                    {const.SERVICE_FIELD_CHORE_CRUD_ID: chore_id, **setting_payload},
+                )
+                updated.append(
+                    {
+                        const.SERVICE_FIELD_CHORE_CRUD_ID: chore_id,
+                        const.SERVICE_FIELD_CHORE_CRUD_NAME: chore_name,
+                    }
+                )
+            except HomeAssistantError as err:
+                failed.append(
+                    {
+                        const.SERVICE_FIELD_CHORE_CRUD_ID: chore_id,
+                        const.SERVICE_FIELD_CHORE_CRUD_NAME: chore_name,
+                        "error": str(err),
+                    }
+                )
+
+        return {
+            "matched": len(target_chore_ids),
+            "updated_count": len(updated),
+            "failed_count": len(failed),
+            "updated": updated,
+            "failed": failed,
+        }
+
+    hass.services.async_register(
+        const.DOMAIN,
+        const.SERVICE_BULK_UPDATE_CHORE_SETTINGS,
+        handle_bulk_update_chore_settings,
+        schema=BULK_UPDATE_CHORE_SETTINGS_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    async def handle_get_chore_details(call: ServiceCall) -> dict[str, Any]:
+        """Return current stored details for one chore."""
+        entry_id = _resolve_target_entry_id(hass, dict(call.data))
+        if not entry_id:
+            raise HomeAssistantError(
+                translation_domain=const.DOMAIN,
+                translation_key=const.TRANS_KEY_ERROR_MSG_NO_ENTRY_FOUND,
+            )
+
+        coordinator = _get_coordinator_by_entry_id(hass, entry_id)
+
+        chore_id = call.data.get(const.SERVICE_FIELD_CHORE_CRUD_ID)
+        chore_name = call.data.get(const.SERVICE_FIELD_CHORE_CRUD_NAME)
+
+        if not chore_id and chore_name:
+            try:
+                chore_id = get_item_id_or_raise(
+                    coordinator, const.ITEM_TYPE_CHORE, chore_name
+                )
+            except HomeAssistantError as err:
+                const.LOGGER.warning("Get Chore Details: %s", err)
+                raise
+
         if not chore_id:
             raise HomeAssistantError(
                 translation_domain=const.DOMAIN,
@@ -1204,121 +1591,124 @@ def async_setup_services(hass: HomeAssistant):
                 translation_placeholders={const.SERVICE_FIELD_CHORE_CRUD_ID: chore_id},
             )
 
-        existing_chore = coordinator.chores_data[chore_id]
+        chore = coordinator.chores_data[chore_id]
+        assignee_ids = list(chore.get(const.DATA_CHORE_ASSIGNED_USER_IDS, []))
+        assignee_names = [
+            str(coordinator.assignees_data.get(user_id, {}).get(const.DATA_USER_NAME, user_id))
+            for user_id in assignee_ids
+        ]
 
-        # Build data input, excluding name if it was used for lookup
-        service_data = dict(call.data)
-        if not call.data.get(const.SERVICE_FIELD_CHORE_CRUD_ID) and chore_name:
-            # name was used for lookup, not for renaming
-            service_data.pop(const.SERVICE_FIELD_CHORE_CRUD_NAME, None)
+        details = {
+            "id": chore_id,
+            "name": chore.get(const.DATA_CHORE_NAME),
+            "assigned_user_ids": assignee_ids,
+            "assigned_user_names": assignee_names,
+            "points": chore.get(const.DATA_CHORE_DEFAULT_POINTS),
+            "description": chore.get(const.DATA_CHORE_DESCRIPTION),
+            "icon": chore.get(const.DATA_CHORE_ICON),
+            "labels": chore.get(const.DATA_CHORE_LABELS, []),
+            "frequency": chore.get(const.DATA_CHORE_RECURRING_FREQUENCY),
+            "custom_interval": chore.get(const.DATA_CHORE_CUSTOM_INTERVAL),
+            "custom_interval_unit": chore.get(const.DATA_CHORE_CUSTOM_INTERVAL_UNIT),
+            "applicable_days": chore.get(const.DATA_CHORE_APPLICABLE_DAYS),
+            "completion_criteria": chore.get(const.DATA_CHORE_COMPLETION_CRITERIA),
+            "approval_reset_type": chore.get(const.DATA_CHORE_APPROVAL_RESET_TYPE),
+            "pending_claims": chore.get(const.DATA_CHORE_APPROVAL_RESET_PENDING_CLAIM_ACTION),
+            "overdue_handling": chore.get(const.DATA_CHORE_OVERDUE_HANDLING_TYPE),
+            "claim_lock_until_window": chore.get(const.DATA_CHORE_CLAIM_LOCK_UNTIL_WINDOW),
+            "auto_approve": chore.get(const.DATA_CHORE_AUTO_APPROVE),
+            "due_date": chore.get(const.DATA_CHORE_DUE_DATE),
+            "per_assignee_due_dates": chore.get(const.DATA_CHORE_PER_ASSIGNEE_DUE_DATES),
+            "due_window_offset": chore.get(const.DATA_CHORE_DUE_WINDOW_OFFSET),
+            "due_reminder_offset": chore.get(const.DATA_CHORE_DUE_REMINDER_OFFSET),
+            "notify_on_claim": chore.get(const.DATA_CHORE_NOTIFY_ON_CLAIM),
+            "notify_on_approval": chore.get(const.DATA_CHORE_NOTIFY_ON_APPROVAL),
+            "notify_on_disapproval": chore.get(const.DATA_CHORE_NOTIFY_ON_DISAPPROVAL),
+            "notify_on_overdue": chore.get(const.DATA_CHORE_NOTIFY_ON_OVERDUE),
+            "notify_on_due_window": chore.get(const.DATA_CHORE_NOTIFY_ON_DUE_WINDOW),
+            "notify_due_reminder": chore.get(const.DATA_CHORE_NOTIFY_DUE_REMINDER),
+        }
 
-        # Resolve assignee names to UUIDs if assignees are being updated.
-        # Exception by design: keep reading legacy assigned_user_ids payloads as
-        # name lists for backward compatibility with existing automations.
-        assignee_names = service_data.get(
-            const.SERVICE_FIELD_CHORE_CRUD_ASSIGNED_USER_NAMES
-        )
-        if assignee_names is None and (
-            const.SERVICE_FIELD_CHORE_CRUD_ASSIGNED_USER_IDS in service_data
-        ):
-            assignee_names = service_data[
-                const.SERVICE_FIELD_CHORE_CRUD_ASSIGNED_USER_IDS
-            ]
-
-        if assignee_names is not None:
-            assignee_ids = []
-            for assignee_name in assignee_names:
-                try:
-                    assignee_id = get_item_id_or_raise(
-                        coordinator,
-                        const.ITEM_TYPE_USER,
-                        assignee_name,
-                        role=const.ROLE_ASSIGNEE,
-                    )
-                    assignee_ids.append(assignee_id)
-                except HomeAssistantError as err:
-                    const.LOGGER.warning(
-                        "Update Chore - assignee lookup failed: %s", err
-                    )
-                    raise
-            service_data[const.SERVICE_FIELD_CHORE_CRUD_ASSIGNED_USER_IDS] = (
-                assignee_ids
-            )
-
-        # Map service fields to DATA_* keys
-        data_input = _map_service_to_data_keys(
-            service_data, _SERVICE_TO_CHORE_DATA_MAPPING
-        )
-
-        # Extract due_date for special handling
-        due_date_input = call.data.get(const.SERVICE_FIELD_CHORE_CRUD_DUE_DATE)
-        due_date_iso = _normalize_service_due_date_input(due_date_input)
-
-        assigned_assignee_ids = list(
-            data_input.get(
-                const.DATA_CHORE_ASSIGNED_USER_IDS,
-                existing_chore.get(const.DATA_CHORE_ASSIGNED_USER_IDS, []),
-            )
-        )
-        assignments_changed = const.DATA_CHORE_ASSIGNED_USER_IDS in data_input and set(
-            assigned_assignee_ids
-        ) != set(existing_chore.get(const.DATA_CHORE_ASSIGNED_USER_IDS, []))
-
-        validation_data = _build_service_chore_validation_data(
-            data_input,
-            assigned_assignee_ids,
-            due_date_iso=due_date_iso,
-            existing_chore=existing_chore,
-        )
-
-        # Validate using shared validation (single source of truth)
-        validation_errors = db.validate_chore_data(
-            validation_data,
-            coordinator.chores_data,
-            is_update=True,
-            current_chore_id=chore_id,
-        )
-        if validation_errors:
-            # Get first error and raise
-            error_field, error_key = next(iter(validation_errors.items()))
-            raise HomeAssistantError(
-                translation_domain=const.DOMAIN,
-                translation_key=error_key,
-            )
-
-        try:
-            # Update chore via ChoreManager (handles build, persist, signal)
-            chore_dict = coordinator.chore_manager.update_chore(chore_id, data_input)
-
-            # Handle due_date via chore_manager (respects SHARED/INDEPENDENT)
-            # Note: set_due_date handles its own persist
-            if due_date_input is not None:
-                await coordinator.chore_manager.set_due_date(
-                    chore_id, due_date_input, assignee_id=None
-                )
-
-            const.LOGGER.info(
-                "Service updated chore '%s' with ID: %s",
-                chore_dict[const.DATA_CHORE_NAME],
-                chore_id,
-            )
-
-            if assignments_changed:
-                await coordinator.async_sync_entities_after_service_create()
-
-            return {const.SERVICE_FIELD_CHORE_CRUD_ID: chore_id}
-
-        except EntityValidationError as err:
-            raise HomeAssistantError(
-                translation_domain=const.DOMAIN,
-                translation_key=err.translation_key,
-            ) from err
+        return details
 
     hass.services.async_register(
         const.DOMAIN,
-        const.SERVICE_UPDATE_CHORE,
-        handle_update_chore,
-        schema=UPDATE_CHORE_SCHEMA,
+        const.SERVICE_GET_CHORE_DETAILS,
+        handle_get_chore_details,
+        schema=GET_CHORE_DETAILS_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    async def handle_list_chores(call: ServiceCall) -> dict[str, Any]:
+        """Return a filtered assistant-friendly list of chores."""
+        entry_id = _resolve_target_entry_id(hass, dict(call.data))
+        if not entry_id:
+            raise HomeAssistantError(
+                translation_domain=const.DOMAIN,
+                translation_key=const.TRANS_KEY_ERROR_MSG_NO_ENTRY_FOUND,
+            )
+
+        coordinator = _get_coordinator_by_entry_id(hass, entry_id)
+        call_data = dict(call.data)
+
+        if call_data.get(const.SERVICE_FIELD_CHORE_IDS) or call_data.get(
+            const.SERVICE_FIELD_CHORE_NAMES
+        ):
+            target_chore_ids = _resolve_service_chore_ids(coordinator, call_data)
+        else:
+            target_chore_ids = list(coordinator.chores_data.keys())
+
+        filter_user_ids = _resolve_service_user_ids(coordinator, call_data)
+        if filter_user_ids:
+            filter_user_id_set = set(filter_user_ids)
+            target_chore_ids = [
+                chore_id
+                for chore_id in target_chore_ids
+                if filter_user_id_set.intersection(
+                    coordinator.chores_data.get(chore_id, {}).get(
+                        const.DATA_CHORE_ASSIGNED_USER_IDS, []
+                    )
+                )
+            ]
+
+        chores = []
+        for chore_id in target_chore_ids:
+            chore = coordinator.chores_data.get(chore_id, {})
+            assignee_ids = list(chore.get(const.DATA_CHORE_ASSIGNED_USER_IDS, []))
+            assignee_names = [
+                str(
+                    coordinator.assignees_data.get(user_id, {}).get(
+                        const.DATA_USER_NAME, user_id
+                    )
+                )
+                for user_id in assignee_ids
+            ]
+            chores.append(
+                {
+                    "id": chore_id,
+                    "name": chore.get(const.DATA_CHORE_NAME),
+                    "assigned_user_ids": assignee_ids,
+                    "assigned_user_names": assignee_names,
+                    "frequency": chore.get(const.DATA_CHORE_RECURRING_FREQUENCY),
+                    "completion_criteria": chore.get(
+                        const.DATA_CHORE_COMPLETION_CRITERIA
+                    ),
+                    "due_date": chore.get(const.DATA_CHORE_DUE_DATE),
+                    "due_window_offset": chore.get(const.DATA_CHORE_DUE_WINDOW_OFFSET),
+                    "due_reminder_offset": chore.get(
+                        const.DATA_CHORE_DUE_REMINDER_OFFSET
+                    ),
+                }
+            )
+
+        chores.sort(key=lambda item: str(item.get("name") or "").lower())
+        return {"count": len(chores), "chores": chores}
+
+    hass.services.async_register(
+        const.DOMAIN,
+        const.SERVICE_LIST_CHORES,
+        handle_list_chores,
+        schema=LIST_CHORES_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
 
@@ -3302,11 +3692,14 @@ async def async_unload_services(hass: HomeAssistant) -> None:
     services = [
         const.SERVICE_CLAIM_CHORE,
         const.SERVICE_APPROVE_CHORE,
+        const.SERVICE_BULK_UPDATE_CHORE_SETTINGS,
         const.SERVICE_CREATE_CHORE,
         const.SERVICE_CREATE_REWARD,
         const.SERVICE_DELETE_CHORE,
         const.SERVICE_DELETE_REWARD,
         const.SERVICE_DISAPPROVE_CHORE,
+        const.SERVICE_GET_CHORE_DETAILS,
+        const.SERVICE_LIST_CHORES,
         const.SERVICE_REDEEM_REWARD,
         const.SERVICE_DISAPPROVE_REWARD,
         const.SERVICE_APPLY_PENALTY,
