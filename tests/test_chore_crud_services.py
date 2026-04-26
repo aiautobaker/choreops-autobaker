@@ -633,6 +633,38 @@ class TestUpdateChoreSchemaValidation:
         assert updated_chore[const.DATA_CHORE_NOTIFY_DUE_REMINDER] is False
 
 
+    @pytest.mark.asyncio
+    async def test_accepts_full_weekday_names_in_applicable_days_update(
+        self,
+        hass: HomeAssistant,
+        scenario_full: SetupResult,
+    ) -> None:
+        """Test update_chore accepts human weekday names and normalizes them."""
+        chore_id = scenario_full.chore_ids["Täke Öut Trash"]
+
+        with patch.object(scenario_full.coordinator, "_persist", new=MagicMock()):
+            response = await hass.services.async_call(
+                DOMAIN,
+                SERVICE_UPDATE_CHORE,
+                {
+                    "id": chore_id,
+                    "frequency": "custom",
+                    "custom_interval": 1,
+                    "custom_interval_unit": "weeks",
+                    "applicable_days": ["Monday", "wednesday", "fri"],
+                },
+                blocking=True,
+                return_response=True,
+            )
+
+        assert response is not None
+        updated_chore = scenario_full.coordinator.chores_data[chore_id]
+        assert updated_chore[const.DATA_CHORE_RECURRING_FREQUENCY] == "custom"
+        assert updated_chore[const.DATA_CHORE_CUSTOM_INTERVAL] == 1
+        assert updated_chore[const.DATA_CHORE_CUSTOM_INTERVAL_UNIT] == "weeks"
+        assert updated_chore[const.DATA_CHORE_APPLICABLE_DAYS] == [0, 2, 4]
+
+
 class TestBulkUpdateChoreSettingsService:
     """Test bulk_update_chore_settings service behavior."""
 

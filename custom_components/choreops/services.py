@@ -745,6 +745,40 @@ _OVERDUE_HANDLING_VALUES = [
 
 # Days of week - using raw values since there are no individual DAY_* constants
 _DAY_OF_WEEK_VALUES = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+_DAY_OF_WEEK_ALIASES = {
+    "mon": "mon",
+    "monday": "mon",
+    "tue": "tue",
+    "tues": "tue",
+    "tuesday": "tue",
+    "wed": "wed",
+    "weds": "wed",
+    "wednesday": "wed",
+    "thu": "thu",
+    "thur": "thu",
+    "thurs": "thu",
+    "thursday": "thu",
+    "fri": "fri",
+    "friday": "fri",
+    "sat": "sat",
+    "saturday": "sat",
+    "sun": "sun",
+    "sunday": "sun",
+}
+
+
+def _normalize_service_weekday(value: Any) -> str:
+    """Normalize service weekday input to canonical 3-letter lowercase tokens."""
+    if not isinstance(value, str):
+        raise vol.Invalid("weekday must be a string")
+
+    normalized = _DAY_OF_WEEK_ALIASES.get(value.strip().lower())
+    if normalized is None:
+        raise vol.Invalid(
+            "invalid weekday; use mon/tue/wed/thu/fri/sat/sun or full weekday names"
+        )
+    return normalized
+
 
 CREATE_CHORE_SCHEMA = vol.Schema(
     _with_service_target_fields(
@@ -785,7 +819,7 @@ CREATE_CHORE_SCHEMA = vol.Schema(
                 ]
             ),
             vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_APPLICABLE_DAYS): vol.All(
-                cv.ensure_list, [vol.In(_DAY_OF_WEEK_VALUES)]
+                cv.ensure_list, [_normalize_service_weekday]
             ),
             vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_COMPLETION_CRITERIA): vol.In(
                 _COMPLETION_CRITERIA_VALUES
@@ -862,7 +896,7 @@ UPDATE_CHORE_SCHEMA = vol.Schema(
                 ]
             ),
             vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_APPLICABLE_DAYS): vol.All(
-                cv.ensure_list, [vol.In(_DAY_OF_WEEK_VALUES)]
+                cv.ensure_list, [_normalize_service_weekday]
             ),
             vol.Optional(const.SERVICE_FIELD_CHORE_CRUD_APPROVAL_RESET): vol.In(
                 _APPROVAL_RESET_VALUES
@@ -1091,9 +1125,18 @@ def _map_service_to_data_keys(
     Returns:
         Dict with DATA_* keys for data_builders consumption
     """
-    return {
+    mapped = {
         mapping[key]: value for key, value in service_data.items() if key in mapping
     }
+
+    applicable_days = mapped.get(const.DATA_CHORE_APPLICABLE_DAYS)
+    if applicable_days is not None:
+        mapped[const.DATA_CHORE_APPLICABLE_DAYS] = [
+            const.WEEKDAY_NAME_TO_INT[day] if isinstance(day, str) else day
+            for day in applicable_days
+        ]
+
+    return mapped
 
 
 # --- Setup Services ---

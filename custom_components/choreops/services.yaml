@@ -1179,7 +1179,7 @@ create_chore:
             - "months"
     applicable_days:
       name: "Applicable Days"
-      description: "Days of the week when the chore is applicable."
+      description: "Days of the week when the chore is applicable. Accepts 3-letter lowercase codes (mon..sun); service calls also accept full weekday names and normalize them."
       example: "['mon', 'wed', 'fri']"
       required: false
       selector:
@@ -1435,8 +1435,8 @@ update_chore:
             - "months"
     applicable_days:
       name: "Applicable Days"
-      description: "New applicable days."
-      example: "['sat', 'sun']"
+      description: "New applicable days. Accepts 3-letter lowercase codes (mon..sun); service calls also accept full weekday names and normalize them."
+      example: "['Tuesday', 'Thursday', 'sat']"
       required: false
       selector:
         select:
