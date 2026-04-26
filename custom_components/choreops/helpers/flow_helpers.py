@@ -916,6 +916,7 @@ def build_chore_schema(
                     for key, label in const.WEEKDAY_OPTIONS.items()
                 ],
                 multiple=True,
+                mode=selector.SelectSelectorMode.LIST,
                 translation_key=const.TRANS_KEY_FLOW_HELPERS_APPLICABLE_DAYS,
             )
         ),
