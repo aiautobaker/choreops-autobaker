@@ -364,6 +364,45 @@ class TestPeriodEnds:
 # =============================================================================
 
 
+class TestMonthlyOrdinalWeekdays:
+    """Test true ordinal weekday behavior for month-based schedules."""
+
+    def test_monthly_first_tuesday_preserved_across_months(self) -> None:
+        """Monthly + Tue on a first-Tuesday base should stay first Tuesday."""
+        config: ScheduleConfig = {
+            "frequency": const.FREQUENCY_MONTHLY,
+            "base_date": "2026-01-06T12:00:00+00:00",  # first Tuesday
+            "applicable_days": [1],
+        }
+        engine = RecurrenceEngine(config)
+
+        reference = make_utc_dt(2026, 1, 6, 13)
+        result = engine.get_next_occurrence(after=reference, require_future=True)
+
+        assert result is not None
+        result_local = dt_util.as_local(result)
+        assert result_local.month == 2
+        assert result_local.day == 3  # first Tuesday of Feb 2026
+        assert result_local.weekday() == 1
+
+    def test_monthly_last_monday_preserved_across_months(self) -> None:
+        """Monthly + Mon on a last-Monday base should stay last Monday."""
+        config: ScheduleConfig = {
+            "frequency": const.FREQUENCY_MONTHLY,
+            "base_date": "2026-01-26T12:00:00+00:00",  # last Monday
+            "applicable_days": [0],
+        }
+        engine = RecurrenceEngine(config)
+
+        reference = make_utc_dt(2026, 1, 26, 13)
+        result = engine.get_next_occurrence(after=reference, require_future=True)
+
+        assert result is not None
+        result_local = dt_util.as_local(result)
+        assert result_local.month == 2
+        assert result_local.day == 23  # last Monday of Feb 2026
+        assert result_local.weekday() == 0
+
 class TestCustomIntervals:
     """Test FREQUENCY_CUSTOM and CUSTOM_FROM_COMPLETE."""
 
@@ -666,6 +705,17 @@ class TestToRruleString:
         engine = RecurrenceEngine(config)
 
         assert engine.to_rrule_string() == "FREQ=MONTHLY;INTERVAL=1"
+
+    def test_monthly_rrule_with_ordinal_weekday(self) -> None:
+        """MONTHLY ordinal weekday schedules should encode BYDAY with ordinal."""
+        config: ScheduleConfig = {
+            "frequency": const.FREQUENCY_MONTHLY,
+            "base_date": "2026-01-06T12:00:00+00:00",  # first Tuesday
+            "applicable_days": [1],
+        }
+        engine = RecurrenceEngine(config)
+
+        assert engine.to_rrule_string() == "FREQ=MONTHLY;INTERVAL=1;BYDAY=1TU"
 
     def test_quarterly_rrule(self) -> None:
         """QUARTERLY should generate MONTHLY with INTERVAL=3."""

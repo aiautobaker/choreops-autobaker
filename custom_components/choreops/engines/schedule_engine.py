@@ -154,6 +154,8 @@ class RecurrenceEngine:
             return self._calculate_multi_daily(reference_utc)
         if self._frequency in self.PERIOD_END_FREQUENCIES:
             return self._calculate_period_end(reference_utc, require_future)
+        if self._uses_monthly_ordinal_weekday():
+            return self._calculate_monthly_ordinal_weekday(reference_utc, require_future)
         if self._is_custom_frequency():
             return self._calculate_with_relativedelta(reference_utc, require_future)
         if self._needs_clamping():
@@ -252,10 +254,16 @@ class RecurrenceEngine:
         if freq == const.FREQUENCY_BIWEEKLY:
             return self._rrule_string_with_weekdays("WEEKLY", 2)
         if freq == const.FREQUENCY_MONTHLY:
+            if self._uses_monthly_ordinal_weekday():
+                return self._rrule_string_with_ordinal_weekday("MONTHLY", 1)
             return "FREQ=MONTHLY;INTERVAL=1"
         if freq == const.FREQUENCY_QUARTERLY:
+            if self._uses_monthly_ordinal_weekday():
+                return self._rrule_string_with_ordinal_weekday("MONTHLY", 3)
             return "FREQ=MONTHLY;INTERVAL=3"
         if freq == const.FREQUENCY_YEARLY:
+            if self._uses_monthly_ordinal_weekday():
+                return self._rrule_string_with_ordinal_weekday("YEARLY", 1)
             return "FREQ=YEARLY;INTERVAL=1"
         if freq == const.PERIOD_WEEK_END:
             return "FREQ=WEEKLY;BYDAY=SU"
@@ -376,8 +384,7 @@ class RecurrenceEngine:
             result = result + self._get_relativedelta()
 
         # Apply applicable_days constraint if configured
-        if self._applicable_days:
-            result = self._snap_to_applicable_day(result)
+        result = self._apply_applicable_days_constraint(result)
 
         return result
 
@@ -414,6 +421,34 @@ class RecurrenceEngine:
             return True
 
         return False
+
+    def _calculate_monthly_ordinal_weekday(
+        self, reference_utc: datetime, require_future: bool
+    ) -> datetime | None:
+        """Calculate next occurrence for month-based nth/last weekday schedules."""
+        if not self._base_date:
+            return None
+
+        candidate = self._apply_applicable_days_constraint(self._base_date)
+        delta = self._get_relativedelta()
+        iteration = 0
+
+        while iteration < const.MAX_DATE_CALCULATION_ITERATIONS:
+            if require_future and candidate <= reference_utc:
+                candidate = self._apply_applicable_days_constraint(candidate + delta)
+                iteration += 1
+                continue
+            if not require_future and candidate < reference_utc:
+                candidate = self._apply_applicable_days_constraint(candidate + delta)
+                iteration += 1
+                continue
+            return candidate
+
+        const.LOGGER.warning(
+            "RecurrenceEngine: Max iterations reached for ordinal monthly schedule %s",
+            self._frequency,
+        )
+        return candidate
 
     def _fast_forward_fixed_interval(
         self, base: datetime, reference: datetime
@@ -475,6 +510,33 @@ class RecurrenceEngine:
             return interval * 7 * 24 * 3600
 
         return 0  # Variable-length interval
+
+    def _uses_monthly_ordinal_weekday(self) -> bool:
+        """Return True when a month-based schedule should preserve nth weekday."""
+        if len(self._applicable_days) != 1 or not self._base_date:
+            return False
+
+        if self._frequency in {
+            const.FREQUENCY_MONTHLY,
+            const.FREQUENCY_QUARTERLY,
+            const.FREQUENCY_YEARLY,
+            const.FREQUENCY_CUSTOM_1_MONTH,
+            const.FREQUENCY_CUSTOM_1_QUARTER,
+            const.FREQUENCY_CUSTOM_1_YEAR,
+        }:
+            return True
+
+        if self._frequency in {
+            const.FREQUENCY_CUSTOM,
+            const.FREQUENCY_CUSTOM_FROM_COMPLETE,
+        }:
+            return self._interval_unit in {
+                const.TIME_UNIT_MONTHS,
+                const.TIME_UNIT_QUARTERS,
+                const.TIME_UNIT_YEARS,
+            }
+
+        return False
 
     def _get_relativedelta(self) -> relativedelta:
         """Build relativedelta from frequency/interval configuration.
@@ -678,6 +740,82 @@ class RecurrenceEngine:
     # Private: applicable_days handling
     # =========================================================================
 
+    def _apply_applicable_days_constraint(self, dt: datetime) -> datetime:
+        """Apply configured weekday constraints to a calculated occurrence."""
+        if not self._applicable_days:
+            return dt
+        if self._uses_monthly_ordinal_weekday():
+            return self._snap_to_monthly_ordinal_weekday(dt)
+        return self._snap_to_applicable_day(dt)
+
+    def _snap_to_monthly_ordinal_weekday(self, dt: datetime) -> datetime:
+        """Snap month-based schedules to the configured ordinal weekday."""
+        if not self._base_date or not self._applicable_days:
+            return dt
+
+        base_local = as_local(self._base_date)
+        target_local = as_local(dt)
+        target_weekday = self._applicable_days[0]
+        ordinal = self._weekday_ordinal_in_month(base_local)
+        is_last = self._is_last_weekday_of_month(base_local)
+        aligned = self._resolve_ordinal_month_weekday(
+            target_local.year,
+            target_local.month,
+            target_weekday,
+            ordinal,
+            is_last,
+            target_local,
+        )
+        return as_utc(aligned)
+
+    def _resolve_ordinal_month_weekday(
+        self,
+        year: int,
+        month: int,
+        weekday: int,
+        ordinal: int,
+        is_last: bool,
+        template: datetime,
+    ) -> datetime:
+        """Resolve nth/last weekday for a specific target month."""
+        if is_last:
+            return self._last_weekday_of_month(year, month, weekday, template)
+
+        resolved = self._nth_weekday_of_month(year, month, weekday, ordinal, template)
+        if resolved is not None:
+            return resolved
+        return self._last_weekday_of_month(year, month, weekday, template)
+
+    def _weekday_ordinal_in_month(self, dt: datetime) -> int:
+        """Return ordinal occurrence number of dt weekday within its month."""
+        return ((dt.day - 1) // 7) + 1
+
+    def _is_last_weekday_of_month(self, dt: datetime) -> bool:
+        """Return True if dt is the last occurrence of its weekday in month."""
+        return dt.day + 7 > monthrange(dt.year, dt.month)[1]
+
+    def _nth_weekday_of_month(
+        self, year: int, month: int, weekday: int, ordinal: int, template: datetime
+    ) -> datetime | None:
+        """Return nth weekday occurrence for month, or None if absent."""
+        first_day = template.replace(year=year, month=month, day=1)
+        offset = (weekday - first_day.weekday()) % 7
+        day = 1 + offset + (ordinal - 1) * 7
+        last_day = monthrange(year, month)[1]
+        if day > last_day:
+            return None
+        return first_day.replace(day=day)
+
+    def _last_weekday_of_month(
+        self, year: int, month: int, weekday: int, template: datetime
+    ) -> datetime:
+        """Return last weekday occurrence for month."""
+        last_day = monthrange(year, month)[1]
+        candidate = template.replace(year=year, month=month, day=last_day)
+        while candidate.weekday() != weekday:
+            candidate = candidate - timedelta(days=1)
+        return candidate
+
     def _snap_to_applicable_day(self, dt: datetime) -> datetime:
         """Advance datetime to next applicable weekday.
 
@@ -747,6 +885,25 @@ class RecurrenceEngine:
         except (ValueError, TypeError):
             const.LOGGER.debug("RecurrenceEngine: Failed to parse datetime: %s", dt_str)
         return None
+
+    def _rrule_string_with_ordinal_weekday(self, freq: str, interval: int) -> str:
+        """Generate RRULE string for nth/last weekday month-based schedules."""
+        if not self._base_date or not self._applicable_days:
+            return f"FREQ={freq};INTERVAL={interval}"
+
+        day_map = {0: "MO", 1: "TU", 2: "WE", 3: "TH", 4: "FR", 5: "SA", 6: "SU"}
+        weekday = day_map.get(self._applicable_days[0])
+        if weekday is None:
+            return f"FREQ={freq};INTERVAL={interval}"
+
+        base_local = as_local(self._base_date)
+        prefix = "-1" if self._is_last_weekday_of_month(base_local) else str(
+            self._weekday_ordinal_in_month(base_local)
+        )
+        base = f"FREQ={freq};INTERVAL={interval}"
+        if freq == "YEARLY":
+            base = f"{base};BYMONTH={base_local.month}"
+        return f"{base};BYDAY={prefix}{weekday}"
 
     def _rrule_string_with_weekdays(self, freq: str, interval: int) -> str:
         """Generate RRULE string with optional BYDAY clause.

@@ -2197,12 +2197,11 @@ class TestMultiWeekScheduling:
         # Calculate the difference
         date_diff = new_due_date - initial_due_date
 
-        # Monthly adds 28-31 days, PLUS applicable_days snapping can add up to 6 more days
-        # (e.g., if monthly lands on Tuesday but chore only runs on Monday, it snaps forward)
-        # Total range: 28-37 days
-        assert 28 <= date_diff.days <= 37, (
-            f"Monthly chore should reschedule 28-37 days ahead "
-            f"(28-31 base + up to 6 for applicable_days snapping), "
+        # Monthly chores with weekday constraints preserve ordinal weekday semantics.
+        # This scenario starts from a mid-month monthly task, so the next occurrence should
+        # remain within normal monthly cadence rather than drifting by snap-forward rules.
+        assert 28 <= date_diff.days <= 31, (
+            f"Monthly chore should reschedule 28-31 days ahead under ordinal weekday monthly semantics, "
             f"but got {date_diff.days} days (from {initial_due_date} to {new_due_date})"
         )
 
